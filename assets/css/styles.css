@@ -304,56 +304,6 @@ section{position:relative}
 .quote{font:800 clamp(1.8rem,4.4vw,3.6rem)/1 var(--display);font-stretch:75%;text-transform:uppercase;margin:clamp(70px,10vw,130px) 0 0;max-width:20ch}
 .quote span{color:var(--green-hi)}
 
-/* ---------- Equipo / formación ---------- */
-.team-grid{display:grid;gap:clamp(30px,5vw,70px)}
-@media(min-width:1040px){.team-grid{grid-template-columns:.95fr 1.05fr;align-items:start}}
-.pitch{position:relative;aspect-ratio:68/100;max-width:520px;width:100%;margin-inline:auto;border-radius:var(--r);background:repeating-linear-gradient(0deg,#0b7f2c 0 10%,#0a7428 10% 20%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.55),0 40px 80px -40px rgba(0,0,0,.6);overflow:hidden}
-@media(min-width:1040px){.pitch{position:sticky;top:110px}}
-.pitch svg.marks{position:absolute;inset:0;width:100%;height:100%;color:rgba(255,255,255,.6)}
-.player{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:6px;border:0;background:none;padding:0;color:#fff;transition:transform .4s var(--ease)}
-.player .dot{width:clamp(40px,8vw,54px);height:clamp(40px,8vw,54px);border-radius:50%;background:var(--ink);border:2px solid #fff;display:grid;place-items:center;font:800 .95rem var(--display);font-stretch:80%;box-shadow:0 8px 20px -6px rgba(0,0,0,.6);transition:background .3s,transform .3s var(--ease),border-color .3s}
-.player .lbl{font:700 .6rem/1.1 var(--mono);letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.55);padding:4px 7px;border-radius:6px;white-space:nowrap}
-.player:hover .dot,.player.on .dot{background:var(--green-hi);color:var(--ink);transform:scale(1.15);border-color:var(--green-hi)}
-.player.dt{left:auto}
-.roster{display:grid;gap:12px;grid-template-columns:1fr;list-style:none;padding:0;margin:0}
-@media(min-width:620px){.roster{grid-template-columns:1fr 1fr}}
-.member{position:relative;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r);padding:20px;transition:border-color .3s,background .3s,transform .4s var(--ease)}
-.member.on,.member:hover{border-color:rgba(46,229,102,.6);background:var(--ink-3)}
-.jersey{width:58px;height:62px;position:relative;color:var(--green)}
-.jersey svg{width:100%;height:100%}
-.jersey b{position:absolute;inset:14px 0 0;display:grid;place-items:center;font:800 1.15rem var(--display);font-stretch:78%;color:#fff}
-.member .pos{font:700 .66rem var(--mono);letter-spacing:.14em;color:var(--green-hi);text-transform:uppercase;display:block}
-.member h3{font-size:1.5rem;margin:6px 0 2px;text-transform:uppercase;font-stretch:75%}
-.member .role{font-size:.84rem;color:var(--muted);display:block}
-.member p{margin:10px 0 0;font-size:.94rem;color:#cdd2cd;line-height:1.5}
-.member a{font-size:.82rem;color:var(--green-hi);text-decoration:none;display:inline-block;margin-top:10px}
-.member a:hover{text-decoration:underline}
-
-/* ---------- Deportistas ---------- */
-.athletes-hero{position:relative;min-height:60vh;display:flex;align-items:flex-end;overflow:hidden;isolation:isolate}
-.athletes-hero .bg{position:absolute;inset:-12% 0;z-index:-2}
-.athletes-hero .bg img{width:100%;height:100%;object-fit:cover;object-position:50% 35%}
-.athletes-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,var(--ink) 0%,rgba(11,12,11,.35) 60%,rgba(11,12,11,.5))}
-.athletes-hero .wrap{padding-block:130px 40px}
-.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 30px}
-.filters button{border:1px solid var(--line);background:transparent;padding:10px 16px;border-radius:999px;font:600 .88rem var(--body);transition:background .3s,color .3s,border-color .3s}
-.filters button[aria-pressed="true"]{background:var(--green);border-color:var(--green)}
-.filters button:hover{border-color:var(--paper)}
-.ath{display:grid;gap:12px;grid-template-columns:1fr;list-style:none;margin:0;padding:0}
-@media(min-width:560px){.ath{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:900px){.ath{grid-template-columns:repeat(3,1fr)}}
-@media(min-width:1200px){.ath{grid-template-columns:repeat(4,1fr)}}
-.ath li{position:relative;border-radius:var(--r);padding:22px;background:linear-gradient(160deg,var(--ink-3),var(--ink-2));border:1px solid var(--line);overflow:hidden;transition:transform .5s var(--ease),border-color .3s,opacity .4s;min-height:200px;display:flex;flex-direction:column}
-.ath li:hover{border-color:rgba(46,229,102,.55)}
-.ath li.hide{display:none}
-.ath .av{width:58px;height:58px;border-radius:16px;display:grid;place-items:center;font:800 1.3rem var(--display);font-stretch:78%;background:var(--green);color:#fff;margin-bottom:18px;position:relative}
-.ath li[data-d="triatlon"] .av{background:#fff;color:var(--ink)}
-.ath li[data-d="fondo"] .av{background:transparent;box-shadow:inset 0 0 0 2px var(--green-hi);color:var(--green-hi)}
-.ath .disc{font:700 .64rem var(--mono);letter-spacing:.16em;color:var(--green-hi);text-transform:uppercase}
-.ath h3{font-size:1.35rem;margin:6px 0 10px;text-transform:uppercase;font-stretch:76%}
-.ath p{margin:auto 0 0;color:#c9cec9;font-size:.93rem;line-height:1.45}
-.ath .big-ico{position:absolute;right:-14px;top:-14px;width:110px;height:110px;color:rgba(255,255,255,.04)}
-
 /* ---------- Tienda ---------- */
 .shop{position:relative;overflow:hidden;isolation:isolate;min-height:78vh;display:grid;place-items:center;text-align:center}
 .shop .bg{position:absolute;inset:-12% 0;z-index:-2}
@@ -422,10 +372,6 @@ section{position:relative}
   .preloader .pre-wm{opacity:1;animation:none}
 }
 
-/* banco técnico */
-.bench-row{display:flex;align-items:center;justify-content:center;gap:22px;margin:18px auto 0;max-width:520px;padding:14px 18px;border:1px dashed rgba(255,255,255,.25);border-radius:var(--r)}
-.bench-t{font:700 .64rem var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
-.player.benchp{position:static;transform:none;grid-auto-flow:column;align-items:center}
 .menu-open .progress{opacity:0}.progress{transition:opacity .3s}
 
 .ftr-cols>*{min-width:0}
