@@ -58,7 +58,7 @@ section{position:relative}
 .preloader.done{opacity:0;visibility:hidden}
 .preloader .wheel{width:84px;height:84px;color:var(--green-hi);animation:spin 1s linear infinite}
 .preloader>div{display:grid;justify-items:center}
-.preloader .pre-wm{display:block;width:150px;height:auto;aspect-ratio:3270/660;color:var(--paper);margin-top:22px}
+.preloader .pre-wm{display:block;width:150px;height:auto;aspect-ratio:3310/710;color:var(--paper);margin-top:22px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- Progreso de scroll con bici ---------- */
@@ -75,7 +75,7 @@ section{position:relative}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none;font:800 1.3rem/1 var(--display);font-stretch:78%;letter-spacing:.02em;text-transform:uppercase}
 .logo{gap:8px;color:inherit}
 .logo .wm,.preloader .pre-wm{fill:currentColor}
-.logo .wm{width:auto;height:26px;aspect-ratio:3270/660;color:currentColor;flex:none}
+.logo .wm{width:auto;height:26px;aspect-ratio:3310/710;color:currentColor;flex:none}
 .logo .sport{font:700 .62rem/1 var(--mono);letter-spacing:.28em;color:var(--green-hi);text-transform:uppercase;align-self:flex-end;padding-bottom:2px}
 .nav{display:none}
 .nav ul{display:flex;gap:4px;list-style:none;margin:0;padding:0}
@@ -461,7 +461,7 @@ section{position:relative}
 .menu-open .progress{opacity:0}.progress{transition:opacity .3s}
 
 .ftr .mega{display:flex;align-items:flex-end;gap:clamp(10px,2vw,28px);-webkit-text-stroke:0;color:inherit}
-.ftr .mega svg{flex:1;min-width:0;height:auto;aspect-ratio:3290/680;fill:transparent;stroke:rgba(244,243,238,.45);stroke-width:7;overflow:visible}
+.ftr .mega svg{flex:1;min-width:0;height:auto;aspect-ratio:3310/710;fill:transparent;stroke:rgba(244,243,238,.45);stroke-width:7;overflow:visible}
 .ftr .mega span{font:800 clamp(1rem,3.4vw,3rem)/1 var(--mono);letter-spacing:.2em;color:var(--green);padding-bottom:.4em}
 .ftr-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
 .ftr-cols>*{min-width:0}
@@ -489,3 +489,6 @@ section{position:relative}
   .hero-media::after{content:"";position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(180deg,transparent,rgba(11,12,11,.55))}
 }
 @media(min-width:1000px){.hero-media{inset:0 0 0 42%}}
+/* Evitar recortes: acentos (Ó) y descendentes en las líneas animadas del hero */
+.hero h1 .line{padding:.14em .06em .1em 0;margin:-.14em 0 -.1em}
+.hero h1 .line>span{transform:translateY(135%)}@media (prefers-reduced-motion:reduce){.hero h1 .line>span{transform:none}}
