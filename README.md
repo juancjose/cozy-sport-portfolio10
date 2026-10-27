@@ -31,4 +31,4 @@ Para sumar o cambiar fotos, agregalas a `assets/img/credits.json` y ejecutá `py
 Es un sitio estático, sin dependencias. En Vercel, importá el repo con Framework "Other", dejá vacío el build command y usá `.` como output directory. También funciona con `vercel --prod`.
 
 ## Créditos
-Todas las fotos son de [Pexels](https://www.pexels.com) y se usan bajo su licencia libre. El detalle de cada foto y su autor está en `assets/img/credits.json` y en el pie del sitio. Las fotos de taller son ilustrativas. El logo, los textos, el equipo y los deportistas son de Cozy Sport.
+Todas las fotos son de [Pexels](https://www.pexels.com) y se usan bajo su licencia libre. El detalle de cada foto y su autor está en `assets/img/credits.json` y en el pie del sitio. Las fotos de taller son ilustrativas. El logo (isotipo Z + COZY) está en `assets/img/cozy-wordmark*.svg` y `favicon.svg`, tomado de los repos de marca de Cozy Sport (`cozy-sport/public/brand`). Los textos, el equipo y los deportistas son de Cozy Sport.
