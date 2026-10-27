@@ -468,3 +468,24 @@ section{position:relative}
 .ftr-cols>:first-child,.ftr-cols>:last-child{grid-column:1/-1}
 .ftr a,.ftr p{overflow-wrap:anywhere}
 @media(min-width:900px){.ftr-cols{grid-template-columns:1.4fr 1fr 1fr 1fr}.ftr-cols>:first-child,.ftr-cols>:last-child{grid-column:auto}}
+/* Hero con la fachada real de la fábrica */
+.hero-media picture{display:block;width:100%;height:100%}
+.hero-media img{object-position:46% 28%}
+@media(max-width:999px){
+  .hero-media{inset:0 0 auto 0;height:58svh}
+  .hero::before{background:linear-gradient(180deg,rgba(11,12,11,.45) 0%,rgba(11,12,11,.05) 16%,rgba(11,12,11,.1) 34%,rgba(11,12,11,.85) 50%,var(--ink) 58%),radial-gradient(120% 60% at 0% 100%,rgba(0,175,49,.22),transparent 60%)}
+  .hero-inner{padding-top:44svh}
+}
+@media(min-width:1000px){
+  .hero-media{inset:0 0 0 38%}
+  .hero-media img{object-position:42% 30%;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 34%);mask-image:linear-gradient(90deg,transparent 0,#000 34%)}
+  .hero::before{background:linear-gradient(180deg,rgba(11,12,11,.6) 0%,rgba(11,12,11,0) 22%,rgba(11,12,11,0) 62%,rgba(11,12,11,.8) 88%,var(--ink) 100%),linear-gradient(90deg,var(--ink) 0%,rgba(11,12,11,.7) 42%,rgba(11,12,11,.1) 70%),radial-gradient(90% 70% at 0% 100%,rgba(0,175,49,.22),transparent 60%)}
+}
+@media (prefers-reduced-motion:no-preference){.hero-media picture{animation:heroDrift 26s ease-in-out 2.4s infinite alternate}}
+@keyframes heroDrift{to{transform:scale(1.04) translate3d(-1%,0,0)}}
+@media(max-width:999px){
+  .hero-media img{-webkit-mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 96%);mask-image:linear-gradient(180deg,#000 0,#000 52%,transparent 96%)}
+  .hero::before{background:linear-gradient(180deg,rgba(11,12,11,.5) 0,rgba(11,12,11,0) 120px),radial-gradient(120% 40% at 0% 100%,rgba(0,175,49,.2),transparent 60%)}
+  .hero-media::after{content:"";position:absolute;inset:auto 0 0;height:45%;background:linear-gradient(180deg,transparent,rgba(11,12,11,.55))}
+}
+@media(min-width:1000px){.hero-media{inset:0 0 0 42%}}

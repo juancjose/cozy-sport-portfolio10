@@ -1,153 +1,137 @@
 [
  {
   "name": "hero-ciclismo",
-  "id": 31764045,
-  "by": "Ozan Yavuz",
-  "title": "Pelotón en ruta de montaña",
+  "id": 13084432,
+  "by": "David McElwee",
+  "title": "Ciclista en una ruta de montaña con curvas",
   "w0": 2400,
-  "h0": 1603
+  "h0": 1503
  },
  {
   "name": "futbol",
-  "id": 31543241,
-  "by": "Franco Monsalvo",
-  "title": "Partido de fútbol",
+  "id": 17955141,
+  "by": "Israel Torres",
+  "title": "Jugadores en una cancha de fútbol",
   "w0": 2400,
-  "h0": 1350
- },
- {
-  "name": "futbol-noche",
-  "id": 30666163,
-  "by": "Franco Monsalvo",
-  "title": "Fútbol bajo las luces",
-  "w0": 2400,
-  "h0": 1560
+  "h0": 1597
  },
  {
   "name": "running",
-  "id": 32825047,
-  "by": "Cristian Camilo Estrada",
-  "title": "Maratón urbana",
+  "id": 29840327,
+  "by": "Stephen Leonardi",
+  "title": "Corredores de maratón en la bruma de la mañana",
   "w0": 2400,
   "h0": 1600
  },
  {
   "name": "triatlon",
-  "id": 38413166,
-  "by": "Lucas Borges",
-  "title": "Largada de triatlón",
+  "id": 5094957,
+  "by": "Gregorio Dorta Martin",
+  "title": "Largada de natación de un triatlón en el mar",
   "w0": 2400,
-  "h0": 1600
+  "h0": 1590
  },
  {
   "name": "aguas-abiertas",
-  "id": 5687400,
-  "by": "RUN 4 FFWPU",
-  "title": "Natación en aguas abiertas",
+  "id": 3324717,
+  "by": "Larry Snickers",
+  "title": "Nadadores en aguas abiertas frente a la playa",
   "w0": 2400,
   "h0": 1600
  },
  {
   "name": "footgolf",
-  "id": 8455350,
-  "by": "Pexels",
-  "title": "Pelota sobre césped",
+  "id": 38010434,
+  "by": "jespyros G Photographer",
+  "title": "Pelota de fútbol sobre la línea del césped",
   "w0": 2400,
-  "h0": 3600
+  "h0": 2025
  },
  {
   "name": "deportistas",
-  "id": 19299045,
-  "by": "jose luis Umana",
-  "title": "Salida del agua en triatlón",
+  "id": 15835401,
+  "by": "Gaby Lopez",
+  "title": "Triatletas saliendo del agua",
   "w0": 2400,
-  "h0": 1600
+  "h0": 1603
  },
  {
   "name": "peloton",
-  "id": 32142595,
-  "by": "Peter Jochim",
-  "title": "Pelotón urbano",
+  "id": 5807676,
+  "by": "Pavel Danilyuk",
+  "title": "Ciclistas entrenando en grupo en la ruta",
   "w0": 2400,
-  "h0": 1750
+  "h0": 1602
  },
  {
   "name": "ruta-aerea",
-  "id": 16089235,
-  "by": "Oleksandra Zelena",
-  "title": "Ruta de montaña desde el aire",
+  "id": 14925035,
+  "by": "Artem Zhukov",
+  "title": "Camino serpenteante entre bosques visto desde el aire",
   "w0": 2400,
-  "h0": 1600
+  "h0": 1800
  },
  {
   "name": "ruta",
-  "id": 6501336,
-  "by": "Matheus Wladeka",
-  "title": "Ciclista en la ruta",
+  "id": 38346799,
+  "by": "Daigoro Folz",
+  "title": "Ciclista de ruta a toda velocidad",
   "w0": 2400,
-  "h0": 1600
+  "h0": 1602
  },
  {
   "name": "mtb",
-  "id": 33424786,
-  "by": "Pexels",
-  "title": "Mountain bike en el bosque",
+  "id": 22858830,
+  "by": "Gustavo Eduardo",
+  "title": "Ciclista de montaña en un sendero del valle",
   "w0": 2400,
   "h0": 1600
  },
  {
   "name": "maillot",
-  "id": 14447428,
-  "by": "Hudson Guerrero Michelan",
-  "title": "Ciclista de espaldas con maillot",
+  "id": 33410442,
+  "by": "Pexels",
+  "title": "Ciclista en movimiento entre campos amarillos",
   "w0": 2400,
-  "h0": 1697
+  "h0": 1600
  },
  {
   "name": "crono",
-  "id": 16566071,
-  "by": "Mikita Yo",
-  "title": "Contrarreloj urbana",
+  "id": 36955801,
+  "by": "Zakhar Vozhdaienko",
+  "title": "Ciclista en plena carrera urbana",
   "w0": 2400,
-  "h0": 3000
+  "h0": 1600
  },
  {
   "name": "bocetos",
-  "id": 7148056,
-  "by": "Pexels",
-  "title": "Boceto a mano alzada",
+  "id": 7256902,
+  "by": "Anete Lusina",
+  "title": "Manos dibujando bocetos de prendas",
   "w0": 2400,
-  "h0": 3600
+  "h0": 1602
  },
  {
   "name": "diseno-digital",
-  "id": 7774247,
-  "by": "Pexels",
-  "title": "Diseño sobre papel",
-  "w0": 2400,
-  "h0": 3600
- },
- {
-  "name": "taller",
-  "id": 31019576,
-  "by": "EqualStock IN",
-  "title": "Taller textil",
+  "id": 6765067,
+  "by": "Tima Miroshnichenko",
+  "title": "Sastre trabajando la moldería sobre la mesa",
   "w0": 2400,
   "h0": 1600
  },
  {
   "name": "corte",
-  "id": 15016522,
-  "by": "Mandiri Abadi",
-  "title": "Mesa de corte",
+  "id": 5830660,
+  "by": "Anna Shvets",
+  "title": "Medición y corte de tela sobre la mesa",
   "w0": 2400,
-  "h0": 3600
+  "h0": 1600
  },
  {
   "name": "costura",
-  "id": 31030991,
-  "by": "EqualStock IN",
-  "title": "Máquina de coser industrial",
+  "id": 32641555,
+  "by": "Rodolfo Gaion",
+  "title": "Costura de tela en máquina industrial",
   "w0": 2400,
   "h0": 1600
  },
@@ -161,33 +145,33 @@
  },
  {
   "name": "estampado",
-  "id": 33650428,
-  "by": "James Collington",
-  "title": "Prensa térmica",
-  "w0": 2400,
-  "h0": 3600
- },
- {
-  "name": "control",
-  "id": 31259204,
-  "by": "EqualStock IN",
-  "title": "Control de calidad",
+  "id": 27893047,
+  "by": "HONG SON",
+  "title": "Operario trabajando una tela estampada",
   "w0": 2400,
   "h0": 1600
  },
  {
+  "name": "control",
+  "id": 36356530,
+  "by": "Erwin Bosman",
+  "title": "Revisión a mano de una prenda",
+  "w0": 2400,
+  "h0": 1920
+ },
+ {
   "name": "embalaje",
-  "id": 9853464,
-  "by": "Ron Lach",
-  "title": "Doblado y embalaje",
+  "id": 4498138,
+  "by": "Kaboompics.com",
+  "title": "Prendas guardadas en una caja de cartón",
   "w0": 2400,
   "h0": 1600
  },
  {
   "name": "tienda",
-  "id": 29840338,
-  "by": "Stephen Leonardi",
-  "title": "Corredores al amanecer",
+  "id": 21856843,
+  "by": "jacky xing",
+  "title": "Corredora entrenando junto al lago",
   "w0": 2400,
   "h0": 1600
  }

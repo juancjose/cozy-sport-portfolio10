@@ -4,6 +4,8 @@ from PIL import Image
 M = json.load(open('assets/img/credits.json'))
 os.makedirs('assets/img', exist_ok=True)
 for it in M:
+    if it.get('w0') and all(os.path.exists(f"assets/img/{it['name']}-{w}.webp") for w in (640, 1280, 1920)):
+        continue  # ya generada (p. ej. la foto de la máquina de coser)
     url = f"https://images.pexels.com/photos/{it['id']}/pexels-photo-{it['id']}.jpeg?auto=compress&cs=tinysrgb&w=2400"
     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
     data = urllib.request.urlopen(req).read()
