@@ -62,10 +62,13 @@ section{position:relative}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ---------- Progreso de scroll con bici ---------- */
-.progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:120;pointer-events:none}
-.progress .bar{height:100%;width:100%;background:linear-gradient(90deg,var(--green-deep),var(--green-hi));transform-origin:0 50%;transform:scaleX(var(--p,0))}
-.progress .rider{position:absolute;top:4px;left:2px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:var(--green-hi);box-shadow:0 0 0 2px rgba(46,229,102,.2),0 2px 8px rgba(0,0,0,.5);transform:translateX(calc(var(--p,0) * (100vw - 22px)))}
-.progress .rider svg{width:9px;height:7px;fill:var(--ink);display:block}
+.progress{position:fixed;left:0;right:0;top:0;height:25px;z-index:120;pointer-events:none;transform:translate3d(0,66px,0);transition:transform .45s var(--ease),opacity .3s}
+.progress.up{transform:translate3d(0,0,0)}
+.progress .bar{position:absolute;left:0;top:11px;height:3px;width:100%;border-radius:0 3px 3px 0;background:linear-gradient(90deg,rgba(0,122,34,.35),var(--green) 55%,var(--green-hi));box-shadow:0 0 8px rgba(46,229,102,.45),0 0 2px rgba(46,229,102,.6);transform-origin:0 50%;transform:scaleX(var(--bw,0));will-change:transform}
+.progress .rider{position:absolute;left:0;top:0;width:25px;height:25px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:#0b0b0b;border:2px solid var(--green-hi);box-shadow:0 0 0 3px rgba(46,229,102,.14),0 0 12px rgba(46,229,102,.35),0 3px 8px rgba(0,0,0,.45);transform:translate3d(var(--bx,8px),0,0);will-change:transform;transition:opacity .3s,scale .3s var(--ease)}
+.progress .rider svg{width:14px;height:11px;margin-left:1px;fill:#fff;display:block;shape-rendering:geometricPrecision}
+.progress.idle .rider{opacity:0;scale:.6}
+.progress.idle .bar{opacity:0}
 
 /* ---------- Header ---------- */
 .hdr{position:fixed;inset:0 0 auto;z-index:100;transition:background .4s,backdrop-filter .4s,transform .45s var(--ease)}
