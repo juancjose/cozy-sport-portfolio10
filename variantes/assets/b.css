@@ -1,0 +1,26 @@
+/* Variante B · ruta y altimetría */
+.hero .ride{display:none}
+.hero-inner{padding-bottom:clamp(220px,28vh,320px)}
+.rideB{position:absolute;left:0;right:0;bottom:0;height:clamp(190px,22vw,300px);pointer-events:none;z-index:1}
+.rideB::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,11,0),rgba(11,12,11,.7) 40%,var(--ink));}
+.rideB svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#bGhost{stroke:rgba(244,243,238,.16);stroke-width:1.5;stroke-dasharray:2 7;stroke-linecap:round}
+#bGrid line{stroke:rgba(255,255,255,.06);stroke-width:1}
+#bTicks line{stroke:rgba(255,255,255,.22);stroke-width:1}
+#bTicks text{font:500 10.5px/1 var(--mono);letter-spacing:.12em;fill:rgba(244,243,238,.45);text-anchor:middle;text-transform:uppercase}
+#bTicks .on line{stroke:rgba(46,229,102,.7)}
+#bTicks .on text{fill:var(--green-hi)}
+#bTicks .dot{fill:var(--ink);stroke:rgba(244,243,238,.35);stroke-width:1.5}
+#bTicks .on .dot{fill:var(--green-hi);stroke:var(--green-hi)}
+.bflag circle{fill:var(--ink);stroke:var(--paper);stroke-width:2}
+.bflag text{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;fill:var(--paper);text-anchor:start}
+.bflag.end text{text-anchor:end}
+.bflag.end circle{stroke:var(--green-hi)}
+.bflag.end.done circle{fill:var(--green-hi)}
+#bMarker .pulse{fill:none;stroke:var(--green-hi);stroke-width:1.5;opacity:.6;transform-box:fill-box;transform-origin:center;animation:bPulse 2.2s var(--ease) infinite}
+#bMarker > circle:nth-child(2){filter:drop-shadow(0 0 10px rgba(46,229,102,.65))}
+.bkm rect{fill:rgba(11,12,11,.85);stroke:rgba(46,229,102,.5);stroke-width:1}
+.bkm text{font:600 11px/1 var(--mono);letter-spacing:.08em;fill:var(--paper);text-anchor:middle}
+@keyframes bPulse{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.8);opacity:0}}
+@media(max-width:999px){.rideB{height:clamp(170px,46vw,240px)}.hero-inner{padding-bottom:clamp(200px,56vw,280px)}#bTicks text{font-size:9.5px}}
+@media (prefers-reduced-motion:reduce){#bMarker .pulse{animation:none;opacity:0}}

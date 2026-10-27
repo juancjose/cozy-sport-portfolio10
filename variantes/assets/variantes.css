@@ -1,0 +1,18 @@
+/* Barra de variantes (solo páginas de prueba) */
+.varbar{position:fixed;left:50%;top:82px;transform:translateX(-50%);z-index:120;display:flex;align-items:center;gap:14px;padding:8px 8px 8px 16px;border-radius:999px;background:rgba(18,20,19,.82);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);box-shadow:0 0 0 1px rgba(255,255,255,.1),0 18px 40px -18px rgba(0,0,0,.8);font:600 .8rem/1 var(--body);color:var(--paper);white-space:nowrap;max-width:calc(100vw - 24px)}
+.varbar a{color:inherit;text-decoration:none}
+.varbar .back{color:var(--muted)}
+.varbar .back:hover{color:var(--paper)}
+.varbar .name{font:700 .7rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.varbar .name b{color:var(--green-hi);font-weight:700;margin-right:.4em}
+.varbar nav{display:flex;gap:4px}
+.varbar nav a{padding:8px 12px;border-radius:999px;color:#cfd3cf}
+.varbar nav a:hover{background:rgba(255,255,255,.08)}
+.varbar nav a[aria-current]{background:var(--green);color:#fff}
+@media(max-width:860px){.varbar nav a{font-size:.78rem}.varbar nav a span{display:none}}
+.varfoot{background:var(--ink);border-top:1px solid var(--line);padding:48px 0 110px;color:var(--muted);font-size:.92rem}
+.varfoot a{color:var(--green-hi)}
+.hdr.hide ~ .varbar,.hdr.hidden ~ .varbar{top:14px}
+@media(max-width:999px){.varbar{top:auto;bottom:12px}}
+@media(max-width:860px){.varbar{gap:8px;padding:6px 6px 6px 14px}.varbar .name{display:none}.varbar nav a span{display:none}.varbar nav a{padding:8px 12px}}
+.hero .hero-inner{position:relative;z-index:2}

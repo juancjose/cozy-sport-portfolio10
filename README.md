@@ -16,6 +16,8 @@ tools/build.py      ← expande tokens de src/ en index.html
 tools/images.py     ← descarga las fotos de Pexels y genera las variantes
 tools/sprite.svg    ← íconos SVG
 screenshots/        ← capturas desktop y mobile
+variantes/          ← 3 propuestas para la animación del hero (A silueta, B ruta, C video)
+tools/variantes.py  ← genera variantes/*.html a partir de index.html + variantes/src/
 ```
 
 ## Cómo editar

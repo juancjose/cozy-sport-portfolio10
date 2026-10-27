@@ -117,7 +117,7 @@
   const secIO = new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
   }), { rootMargin: '-45% 0px -50% 0px' });
-  links.forEach(a => { const s = $(a.getAttribute('href')); s && secIO.observe(s); });
+  links.forEach(a => { const h = a.getAttribute('href'); const s = h.startsWith('#') && $(h); s && secIO.observe(s); });
 
   /* ---------- Scroll: progreso, parallax, ruta, timeline ---------- */
   const prog = $('.progress');
