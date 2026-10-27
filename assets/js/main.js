@@ -145,7 +145,7 @@
     route.style.strokeDasharray = routeLen;
   };
   buildRoute();
-  let lastY = scrollY, ticking = false, spinT;
+  let lastY = scrollY, ticking = false;
   const vis = new Set();
   const visIO = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? vis.add(e.target) : vis.delete(e.target)), { rootMargin: '20% 0px' });
   par.forEach(p => visIO.observe(p));
@@ -177,8 +177,6 @@
   };
   addEventListener('scroll', () => {
     if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
-    prog.style.setProperty('--spin', 'running');
-    clearTimeout(spinT); spinT = setTimeout(() => prog.style.setProperty('--spin', 'paused'), 160);
   }, { passive: true });
   addEventListener('resize', () => { buildRoute(); onScroll(); });
   addEventListener('load', () => { buildRoute(); onScroll(); });
@@ -213,29 +211,73 @@
     });
   }
 
-  /* ---------- Ciclista del hero: piernas que pedalean ---------- */
-  const bike = $('#heroBike');
-  if (bike) {
-    const near = $('#legNear', bike), far = $('#legFar', bike), crank = $('#crank', bike);
-    const H = [80, 44], B = [88, 88], R = 9, L1 = 27, L2 = 28;
-    const leg = (a) => {
-      const P = [B[0] + R * Math.cos(a), B[1] + R * Math.sin(a)];
-      const dx = P[0] - H[0], dy = P[1] - H[1], d = Math.min(Math.hypot(dx, dy), L1 + L2 - 0.01);
-      const t = Math.atan2(dy, dx), k = Math.acos((L1 * L1 + d * d - L2 * L2) / (2 * L1 * d));
-      const K = [H[0] + L1 * Math.cos(t - k), H[1] + L1 * Math.sin(t - k)];
-      return { d: `M${H[0]} ${H[1]}L${K[0].toFixed(1)} ${K[1].toFixed(1)}L${P[0].toFixed(1)} ${P[1].toFixed(1)}l6 0`, P };
+  /* ---------- Hero: la ruta se dibuja (al cargar y con el scroll) ---------- */
+  const hrBox = $('.hroute');
+  if (hrBox) {
+    const g = id => document.getElementById(id), NS = 'http://www.w3.org/2000/svg';
+    const line = g('hrLine'), KM = 100;
+    // perfil ilustrativo [x 0..1, altura 0..1]
+    const PROF = [[0,.18],[.06,.22],[.12,.16],[.19,.3],[.25,.26],[.31,.38],[.37,.33],[.43,.42],[.49,.36],[.55,.48],[.61,.58],[.66,.74],[.71,.92],[.75,.84],[.8,.62],[.85,.55],[.9,.4],[.95,.34],[1,.3]];
+    let pts = [], len = 0, BW = 0, shown = 0, ticks = [], t0 = 0, on = false, raf = 0;
+    const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+    const f1 = v => v.toFixed(1);
+    const smooth = P => { let d = `M${f1(P[0][0])},${f1(P[0][1])}`; for (let i = 0; i < P.length - 1; i++) { const a = P[i - 1] || P[i], b = P[i], c = P[i + 1], e = P[i + 2] || c; d += `C${f1(b[0] + (c[0] - a[0]) / 6)},${f1(b[1] + (c[1] - a[1]) / 6)} ${f1(c[0] - (e[0] - b[0]) / 6)},${f1(c[1] - (e[1] - b[1]) / 6)} ${f1(c[0])},${f1(c[1])}`; } return d; };
+    const yAt = x => { let lo = 0, hi = len; for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; line.getPointAtLength(m).x < x ? lo = m : hi = m; } return line.getPointAtLength(lo).y; };
+    const draw = p => {
+      p = Math.max(0, Math.min(1, p));
+      const L = len * p, pt = line.getPointAtLength(L);
+      line.style.strokeDashoffset = g('hrGlow').style.strokeDashoffset = len - L;
+      g('hrRevealRect').setAttribute('width', pt.x);
+      g('hrMarker').setAttribute('transform', `translate(${f1(pt.x)},${f1(pt.y)})`);
+      g('hrMarker').style.opacity = p < .004 ? 0 : 1;
+      const f = (pt.x - pts[0][0]) / (pts.at(-1)[0] - pts[0][0]);
+      g('hrKm').textContent = 'km ' + Math.round(f * KM);
+      const pill = g('hrKm').parentNode, dx = Math.max(40 - pt.x, Math.min(0, BW - 40 - pt.x));
+      pill.setAttribute('transform', `translate(${f1(dx)},0)`);
+      pill.style.opacity = p >= .985 ? 0 : 1;
+      ticks.forEach(([q, t]) => t.classList.toggle('on', f >= q - .002));
+      g('hrEnd').classList.toggle('done', p >= .999);
     };
-    const draw = (a) => {
-      const l1 = leg(a), l2 = leg(a + Math.PI);
-      near.setAttribute('d', l1.d); far.setAttribute('d', l2.d);
-      crank.setAttribute('d', `M${l2.P[0].toFixed(1)} ${l2.P[1].toFixed(1)}L${l1.P[0].toFixed(1)} ${l1.P[1].toFixed(1)}`);
+    const layout = () => {
+      const r = hrBox.getBoundingClientRect(), W = r.width, H = r.height; BW = W;
+      const mx = W < 700 ? 28 : Math.max(48, (W - 1320) / 2 + 48), top = H * .26, base = H - 52;
+      pts = PROF.map(([x, y]) => [mx + x * (W - 2 * mx), base - y * (base - top)]);
+      const d = smooth(pts);
+      ['hrLine', 'hrGlow', 'hrGhost'].forEach(id => g(id).setAttribute('d', d));
+      g('hrArea').setAttribute('d', d + `L${f1(pts.at(-1)[0])},${base}L${f1(pts[0][0])},${base}Z`);
+      g('hrStroke').setAttribute('x1', mx); g('hrStroke').setAttribute('x2', W - mx);
+      len = line.getTotalLength();
+      line.style.strokeDasharray = g('hrGlow').style.strokeDasharray = `${len} ${len}`;
+      const grid = g('hrGrid'), tk = g('hrTicks'); grid.textContent = tk.textContent = ''; ticks = [];
+      for (let i = 0; i < 4; i++) { const y = top + i * (base - top) / 3; el('line', { x1: mx, x2: W - mx, y1: y, y2: y }, grid); }
+      const step = W < 700 ? 25 : 10;
+      for (let k = step; k < KM; k += step) {
+        const x = mx + k / KM * (W - 2 * mx), y = yAt(x), t = el('g', {}, tk);
+        el('line', { x1: x, x2: x, y1: y + 6, y2: base + 10 }, t);
+        el('circle', { class: 'dot', cx: x, cy: y, r: 3.2 }, t);
+        el('text', { x, y: base + 26 }, t).textContent = k + ' km';
+        ticks.push([k / KM, t]);
+      }
+      g('hrStart').setAttribute('transform', `translate(${f1(pts[0][0])},${f1(pts[0][1])})`);
+      g('hrEnd').setAttribute('transform', `translate(${f1(pts.at(-1)[0])},${f1(pts.at(-1)[1])})`);
+      draw(reduce ? 1 : shown);
     };
-    draw(0.6);
+    layout();
+    let rw = innerWidth; addEventListener('resize', () => { if (innerWidth !== rw || !reduce) { rw = innerWidth; layout(); } });
     if (!reduce) {
-      let on = true;
-      new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on) requestAnimationFrame(loop); }).observe($('.hero'));
-      const loop = (t) => { if (!on) return; draw(t / 1000 * 7); requestAnimationFrame(loop); };
-      requestAnimationFrame(loop);
+      // intro: arranca cuando la franja es visible (al cargar o al bajar) y lleva la Z al 40%;
+      // el scroll la lleva hasta la meta.
+      const scrollP = () => { const r = hrBox.getBoundingClientRect(), vh = innerHeight; return Math.max(0, Math.min(1, (vh - r.bottom) / (vh * .5))); };
+      const loop = now => {
+        if (!t0) t0 = now;
+        const k = Math.min(1, (now - t0) / 2600), intro = .4 * (1 - Math.pow(1 - k, 3));
+        const target = Math.max(intro, k > .15 ? .4 * Math.min(1, k * 1.2) + .6 * scrollP() : 0);
+        shown += (target - shown) * .07;
+        if (Math.abs(target - shown) < .0005) shown = target;
+        draw(shown);
+        raf = on ? requestAnimationFrame(loop) : 0;
+      };
+      new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on && !raf) raf = requestAnimationFrame(loop); }, { threshold: .2 }).observe(hrBox);
     }
   }
 

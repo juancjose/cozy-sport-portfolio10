@@ -64,8 +64,8 @@ section{position:relative}
 /* ---------- Progreso de scroll con bici ---------- */
 .progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:120;pointer-events:none}
 .progress .bar{height:100%;width:100%;background:linear-gradient(90deg,var(--green-deep),var(--green-hi));transform-origin:0 50%;transform:scaleX(var(--p,0))}
-.progress .rider{position:absolute;top:2px;left:0;width:34px;height:20px;color:var(--green-hi);transform:translateX(calc(var(--p,0) * (100vw - 40px)));filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))}
-.progress .rider .w{transform-box:fill-box;transform-origin:center;animation:spin .6s linear infinite;animation-play-state:var(--spin,paused)}
+.progress .rider{position:absolute;top:4px;left:2px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:var(--green-hi);box-shadow:0 0 0 2px rgba(46,229,102,.2),0 2px 8px rgba(0,0,0,.5);transform:translateX(calc(var(--p,0) * (100vw - 22px)))}
+.progress .rider svg{width:9px;height:7px;fill:var(--ink);display:block}
 
 /* ---------- Header ---------- */
 .hdr{position:fixed;inset:0 0 auto;z-index:100;transition:background .4s,backdrop-filter .4s,transform .45s var(--ease)}
@@ -115,22 +115,6 @@ section{position:relative}
 .hero-tags li{font:700 .68rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:9px 12px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(11,12,11,.3);backdrop-filter:blur(6px)}
 .hero-tags li:first-child{background:var(--green);border-color:var(--green)}
 
-/* ciclista animado */
-.ride{position:absolute;left:0;right:0;bottom:clamp(26px,5vh,52px);height:96px;pointer-events:none}
-.ride .road{position:absolute;left:0;right:0;bottom:8px;height:2px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 38px,transparent 38px 70px);animation:road .5s linear infinite}
-@keyframes road{to{background-position:-70px 0}}
-.ride .bike-wrap{position:absolute;bottom:9px;left:0;width:150px;animation:cross 13s linear infinite;will-change:transform}
-.ride .bike{width:150px;height:auto;color:#fff}
-@keyframes cross{from{transform:translateX(-200px)}to{transform:translateX(calc(100vw + 60px))}}
-.bike .wheel{transform-box:fill-box;transform-origin:center;animation:spin .55s linear infinite}
-.bike .crank{transform-box:view-box;transform-origin:88px 88px;animation:spin .9s linear infinite}
-.speed{position:absolute;right:100%;top:0;width:160px;height:100%}
-.speed i{position:absolute;right:0;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(46,229,102,.95));animation:speed .55s linear infinite}
-.speed i:nth-child(1){top:22%;width:120px}
-.speed i:nth-child(2){top:44%;width:80px;animation-delay:-.2s}
-.speed i:nth-child(3){top:63%;width:140px;animation-delay:-.35s}
-.speed i:nth-child(4){top:80%;width:60px;animation-delay:-.1s}
-@keyframes speed{from{transform:translateX(30px);opacity:0}30%{opacity:1}to{transform:translateX(-60px);opacity:0}}
 .scroll-cue{position:absolute;right:var(--pad);bottom:clamp(150px,20vh,200px);display:none;writing-mode:vertical-rl;font:700 .68rem var(--mono);letter-spacing:.3em;color:var(--muted);text-decoration:none}
 .scroll-cue::after{content:"";display:block;width:1px;height:70px;margin:14px auto 0;background:linear-gradient(var(--green-hi),transparent);animation:cue 1.8s var(--ease) infinite}
 @keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
@@ -449,9 +433,8 @@ section{position:relative}
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
   .rv{opacity:1;transform:none}.rv-img{clip-path:none}
   .hero h1 .line>span{transform:none}.hero .lead,.hero .ctas,.hero-tags{opacity:1}
-  .ride .bike-wrap{transform:translateX(30vw)}
   .marquee .track{animation:none}
-  .lines,.speed{display:none}
+  .lines{display:none}
 }
 
 /* banco técnico */
@@ -492,3 +475,39 @@ section{position:relative}
 /* Evitar recortes: acentos (Ó) y descendentes en las líneas animadas del hero */
 .hero h1 .line{padding:.14em .06em .1em 0;margin:-.14em 0 -.1em}
 .hero h1 .line>span{transform:translateY(135%)}@media (prefers-reduced-motion:reduce){.hero h1 .line>span{transform:none}}
+
+/* ---------- Hero: ruta y altimetría (la Z recorre la etapa) ---------- */
+.hero{--hr-h:clamp(170px,21vh,230px)}
+.hero-inner{position:relative;z-index:2;padding-bottom:calc(var(--hr-h) + 18px)}
+.hero h1{font-size:min(var(--fs-mega),15.2vh)}
+.hroute{position:absolute;left:0;right:0;bottom:0;height:var(--hr-h);pointer-events:none;z-index:1}
+.hroute::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,12,11,0),rgba(11,12,11,.72) 42%,var(--ink))}
+.hroute svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#hrGhost{stroke:rgba(244,243,238,.16);stroke-width:1.5;stroke-dasharray:2 7;stroke-linecap:round}
+#hrGrid line{stroke:rgba(255,255,255,.06);stroke-width:1}
+#hrTicks line{stroke:rgba(255,255,255,.22);stroke-width:1}
+#hrTicks text{font:500 10.5px/1 var(--mono);letter-spacing:.12em;fill:rgba(244,243,238,.45);text-anchor:middle;text-transform:uppercase}
+#hrTicks .dot{fill:var(--ink);stroke:rgba(244,243,238,.35);stroke-width:1.5}
+#hrTicks .on line{stroke:rgba(46,229,102,.7)}#hrTicks .on text{fill:var(--green-hi)}#hrTicks .on .dot{fill:var(--green-hi);stroke:var(--green-hi)}
+.hrflag circle{fill:var(--ink);stroke:var(--paper);stroke-width:2}
+.hrflag text{font:600 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;fill:var(--paper);text-anchor:start}
+.hrflag.end text{text-anchor:end}.hrflag.end circle{stroke:var(--green-hi)}.hrflag.end.done circle{fill:var(--green-hi)}
+#hrMarker{opacity:0;transition:opacity .4s}
+#hrMarker .core{fill:var(--green-hi);filter:drop-shadow(0 0 10px rgba(46,229,102,.65))}
+#hrMarker use{fill:var(--ink)}
+#hrMarker .pulse{fill:none;stroke:var(--green-hi);stroke-width:1.5;opacity:.6;transform-box:fill-box;transform-origin:center;animation:hrPulse 2.2s var(--ease) infinite}
+.hrkm rect{fill:rgba(11,12,11,.85);stroke:rgba(46,229,102,.5);stroke-width:1}
+.hrkm text{font:600 11px/1 var(--mono);letter-spacing:.08em;fill:var(--paper);text-anchor:middle}
+@keyframes hrPulse{0%{transform:scale(.8);opacity:.7}100%{transform:scale(1.8);opacity:0}}
+.scroll-cue{bottom:calc(var(--hr-h) + 24px)}
+@media(max-width:999px){.hero{--hr-h:clamp(160px,44vw,230px)}.hero h1{font-size:var(--fs-mega)}#hrTicks text{font-size:9.5px}}
+@media(max-width:380px){.hrflag text{font-size:10px;letter-spacing:.1em}}
+@media (prefers-reduced-motion:reduce){#hrMarker .pulse{animation:none;opacity:0}}
+@media(min-width:1000px){
+  .hero{--hr-h:clamp(150px,20vh,220px)}
+  .hero-inner{padding-top:clamp(96px,13vh,140px)}
+  .hero h1{font-size:min(var(--fs-mega),13.6vh)}
+  .hero .lead{margin-top:clamp(16px,2.6vh,28px)}
+  .hero .ctas{margin-top:clamp(20px,3.4vh,34px)}
+}
+.hrkm{transition:opacity .4s}

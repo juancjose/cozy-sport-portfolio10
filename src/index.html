@@ -37,7 +37,7 @@
 
 <div class="progress" aria-hidden="true">
   <div class="bar"></div>
-  <svg class="rider" viewBox="0 0 34 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><g class="w"><circle cx="7" cy="14" r="5"/><path d="M7 9v10M2 14h10"/></g><g class="w"><circle cx="27" cy="14" r="5"/><path d="M27 9v10M22 14h10"/></g><path d="M7 14l6-8h10l4 8M13 6l4 8h0l6-8M11 5h5M23 6l1-3h3"/></svg>
+  <span class="rider"><svg viewBox="50 100 412 312"><use href="#i-z"/></svg></span>
 </div>
 
 <header class="hdr" id="top">
@@ -100,22 +100,29 @@
     </div>
   </div>
   <a class="scroll-cue" href="#nosotros">SCROLL</a>
-  <div class="ride" aria-hidden="true">
-    <div class="road"></div>
-    <div class="bike-wrap"><div class="speed"><i></i><i></i><i></i><i></i></div>
-    <svg class="bike" id="heroBike" viewBox="0 0 180 112" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <g class="wheel" stroke-width="2.4"><circle cx="40" cy="88" r="22"/><path d="M40 66v44M18 88h44M24.4 72.4l31.2 31.2M55.6 72.4l-31.2 31.2" stroke-width="1" opacity=".7"/></g>
-      <g class="wheel" stroke-width="2.4"><circle cx="140" cy="88" r="22"/><path d="M140 66v44M118 88h44M124.4 72.4l31.2 31.2M155.6 72.4l-31.2 31.2" stroke-width="1" opacity=".7"/></g>
-      <path id="legFar" stroke="#9aa19c" stroke-width="5" d=""/>
-      <g stroke-width="3.2"><path d="M40 88L88 88L78 50L40 88M78 50L128 50M88 88L131 58M128 45L140 88" stroke="#2ee566"/><path d="M70 46h16M128 45l8-4c9 0 10 9 4 15"/></g>
-      <circle cx="88" cy="88" r="5" stroke-width="2.4"/>
-      <path id="crank" stroke-width="3" d=""/>
-      <path stroke-width="6" d="M80 44L122 33"/>
-      <path stroke-width="4" d="M122 33l6 9 9 2"/>
-      <circle cx="132" cy="25" r="7" fill="currentColor" stroke="none"/>
-      <path d="M124 22c4-6 14-7 18-1" stroke="#2ee566" stroke-width="4"/>
-      <path id="legNear" stroke-width="5.5" d=""/>
-    </svg></div>
+  <div class="hroute" aria-hidden="true">
+    <svg id="hr">
+      <defs>
+        <linearGradient id="hrStroke" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1440" y2="0"><stop offset="0" stop-color="#007a22" stop-opacity=".25"/><stop offset=".55" stop-color="#00af31"/><stop offset="1" stop-color="#2ee566"/></linearGradient>
+        <linearGradient id="hrAreaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00af31" stop-opacity=".28"/><stop offset=".7" stop-color="#00af31" stop-opacity=".04"/><stop offset="1" stop-color="#00af31" stop-opacity="0"/></linearGradient>
+        <filter id="hrGlowF" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+        <clipPath id="hrReveal"><rect id="hrRevealRect" x="0" y="-50" width="0" height="2000"/></clipPath>
+      </defs>
+      <g id="hrGrid"></g>
+      <path id="hrGhost" fill="none"/>
+      <g clip-path="url(#hrReveal)"><path id="hrArea" fill="url(#hrAreaG)"/></g>
+      <path id="hrGlow" fill="none" stroke="#2ee566" stroke-width="8" filter="url(#hrGlowF)" opacity=".55"/>
+      <path id="hrLine" fill="none" stroke="url(#hrStroke)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <g id="hrTicks"></g>
+      <g id="hrStart" class="hrflag"><circle r="5"/><text x="0" y="-18">Largada</text></g>
+      <g id="hrEnd" class="hrflag end"><circle r="5"/><text x="0" y="-18">Meta</text></g>
+      <g id="hrMarker">
+        <circle class="pulse" r="22"/>
+        <circle class="core" r="17"/>
+        <use href="#i-z" x="-10.5" y="-8" width="21" height="16"/>
+        <g class="hrkm"><rect x="-34" y="-58" width="68" height="24" rx="12"/><text id="hrKm" x="0" y="-41.5">km 0</text></g>
+      </g>
+    </svg>
   </div>
 </section>
 
