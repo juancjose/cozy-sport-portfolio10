@@ -28,7 +28,6 @@ head = html[:html.index('</head>')]
 head = re.sub(r'<script type="application/ld\+json">.*?</script>', '', head, flags=re.S)
 head = re.sub(r'<link rel="preload"[^>]*>', '', head)
 head = re.sub(r'<meta property="og:[^>]*>|<meta name="twitter:[^>]*>|<link rel="canonical"[^>]*>', '', head)
-progress = re.search(r'<div class="progress".*?</svg>\s*</div>\n', html, re.S).group(0)
 sprite = re.search(r'<svg width="0" height="0".*?</svg>\n', html, re.S).group(0)
 header = re.search(r'<header class="hdr".*?</header>\n<nav class="mnav".*?</nav>\n', html, re.S).group(0)
 hero = re.search(r'<section class="hero".*?</section>\n', html, re.S).group(0)
@@ -51,7 +50,7 @@ for key, (letter, name, desc) in PAGES.items():
     h = head.replace(re.search(r'<title>.*?</title>', head).group(0),
                      f'<title>Variante {letter} · {name} · Cozy Sport</title>')
     h = fix(h) + f'<meta name="robots" content="noindex">\n<link rel="stylesheet" href="assets/variantes.css">\n<link rel="stylesheet" href="assets/{key[0]}.css">\n'
-    body = (f'<body class="var var-{key[0]}">\n' + fix(sprite) + progress + fix(header) +
+    body = (f'<body class="var var-{key[0]}">\n' + fix(sprite) + fix(header) +
             f'<div class="varbar" role="note"><a class="back" href="index.html">← Comparar variantes</a><span class="name"><b>Variante {letter}</b> {name}</span><nav aria-label="Variantes">{nav}</nav></div>\n' +
             '<main id="main">\n' + fix(hero).replace('<!--VARIANTE-->', frag) + fix(marquee) + fix(nosotros) + '</main>\n' +
             f'<footer class="varfoot"><div class="wrap"><p>Página de prueba · Variante {letter}: {desc} El sitio principal no cambia hasta que elijas una.</p><p><a href="index.html">Ver las tres variantes</a> · <a href="../">Volver al sitio</a></p></div></footer>\n' +

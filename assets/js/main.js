@@ -38,8 +38,7 @@
   }), { rootMargin: '-45% 0px -50% 0px' });
   links.forEach(a => { const h = a.getAttribute('href'); const s = h.startsWith('#') && $(h); s && secIO.observe(s); });
 
-  /* ---------- Scroll: progreso, parallax, ruta, timeline ---------- */
-  const prog = $('.progress');
+  /* ---------- Scroll: header, parallax, ruta, timeline ---------- */
   const par = $$('[data-parallax]');
   const route = $('#routeDraw'), routeWrap = $('.route-wrap'), routeBase = $('#routeBase'), routeBike = $('#routeBike');
   const tl = $('#timeline');
@@ -73,16 +72,9 @@
     return Math.min(1, Math.max(0, (vh * start - r.top) / (r.height + vh * (start - end))));
   };
   const onScroll = () => {
-    const y = scrollY, max = document.body.scrollHeight - innerHeight;
-    const p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0, vw = document.documentElement.clientWidth;
-    const bx = Math.round(8 + p * (vw - 25 - 16));
-    prog.style.setProperty('--p', p.toFixed(4));
-    prog.style.setProperty('--bx', bx + 'px');
-    prog.style.setProperty('--bw', ((bx + 12.5) / vw).toFixed(4));
-    prog.classList.toggle('idle', y < 40);
+    const y = scrollY;
     hdr.classList.toggle('scrolled', y > 40);
     hdr.classList.toggle('hide', y > 600 && y > lastY && !document.body.classList.contains('menu-open'));
-    prog.classList.toggle('up', hdr.classList.contains('hide'));
     lastY = y;
     if (!reduce) {
       vis.forEach(el => {

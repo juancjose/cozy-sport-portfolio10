@@ -61,13 +61,6 @@ section{position:relative}
 @keyframes preIn{from{opacity:0;transform:translate3d(0,8px,0) scale(.97);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
 
 /* ---------- Progreso de scroll con bici ---------- */
-.progress{position:fixed;left:0;right:0;top:0;height:25px;z-index:120;pointer-events:none;transform:translate3d(0,66px,0);transition:transform .45s var(--ease),opacity .3s}
-.progress.up{transform:translate3d(0,0,0)}
-.progress .bar{position:absolute;left:0;top:11px;height:3px;width:100%;border-radius:0 3px 3px 0;background:linear-gradient(90deg,rgba(0,122,34,.35),var(--green) 55%,var(--green-hi));box-shadow:0 0 8px rgba(46,229,102,.45),0 0 2px rgba(46,229,102,.6);transform-origin:0 50%;transform:scaleX(var(--bw,0));will-change:transform}
-.progress .rider{position:absolute;left:0;top:0;width:25px;height:25px;box-sizing:border-box;border-radius:50%;display:grid;place-items:center;background:#0b0b0b;border:2px solid var(--green-hi);box-shadow:0 0 0 3px rgba(46,229,102,.14),0 0 12px rgba(46,229,102,.35),0 3px 8px rgba(0,0,0,.45);transform:translate3d(var(--bx,8px),0,0);will-change:transform;transition:opacity .3s,scale .3s var(--ease)}
-.progress .rider svg{width:14px;height:11px;margin-left:1px;fill:#fff;display:block;shape-rendering:geometricPrecision}
-.progress.idle .rider{opacity:0;scale:.6}
-.progress.idle .bar{opacity:0}
 
 /* ---------- Header ---------- */
 .hdr{position:fixed;inset:0 0 auto;z-index:100;transition:background .4s,backdrop-filter .4s,transform .45s var(--ease)}
@@ -362,8 +355,6 @@ section{position:relative}
 
   .preloader .pre-wm{opacity:1;animation:none}
 }
-
-.menu-open .progress{opacity:0}.progress{transition:opacity .3s}
 
 .ftr-cols>*{min-width:0}
 .ftr a,.ftr p{overflow-wrap:anywhere}
