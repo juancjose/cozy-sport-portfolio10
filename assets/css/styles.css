@@ -181,6 +181,7 @@ section{position:relative}
 .tile.big{grid-column:span 2;min-height:420px}
 .tile.wide{grid-column:span 2}
 @media(min-width:900px){.bento{grid-template-columns:repeat(4,1fr);grid-auto-rows:260px}.tile{min-height:0}.tile.big{grid-column:span 2;grid-row:span 2;min-height:0}.tile.tall{grid-row:span 2}.tile.wide{grid-column:span 2}}
+@media(max-width:899px){.bento .tile.wide:not(:last-child){grid-column:auto}}
 
 /* ---------- Ciclismo ---------- */
 .cycling{background:var(--ink-2);overflow:hidden}
