@@ -5,15 +5,15 @@
    ⚠️ ACÁ VAN LOS NÚMEROS REALES. Los de abajo son placeholders falsos.
    Formato wa.me: 549 + código de área sin el 0 + número sin el 15.
    Ej.: 011 15 1234-5678  →  '5491112345678'
-   (La variante "contacto-nombres" usa estos mismos números, en el mismo orden.)
    ================================================================ */
 const VENDEDORES = [
-  { nombre: 'Vendedor 1', corto: 'V1', tel: '5491100000001' },
-  { nombre: 'Vendedor 2', corto: 'V2', tel: '5491100000002' },
-  { nombre: 'Vendedor 3', corto: 'V3', tel: '5491100000003' },
-  { nombre: 'Vendedor 4', corto: 'V4', tel: '5491100000004' },
-  { nombre: 'Vendedor 5', corto: 'V5', tel: '5491100000005' },
+  { nombre: 'Yesi',   tel: '5491100000001' },
+  { nombre: 'Moni',   tel: '5491100000002' },
+  { nombre: 'Cami',   tel: '5491100000003' },
+  { nombre: 'Cintia', tel: '5491100000004' },
+  { nombre: 'Maca',   tel: '5491100000005' },
 ];
+const VENDEDORES_ROL = 'Asesora de ventas';
 (() => {
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -261,10 +261,8 @@ const VENDEDORES = [
   safe('form', () => {
   const form = $('#contactForm');
   if (!form) return;
-  // La variante con nombres reemplaza solo los nombres (data-vendedores); los números son siempre los de VENDEDORES.
-  const names = (form.dataset.vendedores || '').split(',').map(s => s.trim()).filter(Boolean);
-  const rol = form.dataset.rol || '';
-  const team = VENDEDORES.map((v, i) => names[i] ? { ...v, nombre: names[i], corto: names[i].slice(0, 2) } : v);
+  const rol = VENDEDORES_ROL;
+  const team = VENDEDORES;
   const N = team.length;
   // "El que le toca, le toca": turno rotativo por navegador. El contador arranca en un índice al azar
   // (un sitio estático no comparte contador entre visitantes) y el asignado queda guardado,
