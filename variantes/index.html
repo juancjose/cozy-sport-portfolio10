@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/styles.css?v=0bb1c48f07">
+<link rel="stylesheet" href="../assets/css/styles.css?v=85b9e37ad9">
 <style>
 body{background:var(--ink);color:var(--paper)}
 .vx{max-width:var(--max);margin:0 auto;padding:clamp(28px,5vw,64px) var(--pad) 80px}
@@ -39,6 +39,11 @@ body{background:var(--ink);color:var(--paper)}
 .vnote{margin-top:clamp(36px,5vw,56px);color:var(--muted-dark);font-size:.85rem;line-height:1.6}
 .vnote a{color:var(--muted)}
 @media(max-width:999px){.vgrid{grid-template-columns:1fr}.vthumb{aspect-ratio:16/9}}
+.vsec{font-family:var(--display);font-weight:800;font-stretch:72%;text-transform:uppercase;font-size:clamp(2rem,4.6vw,3.8rem);line-height:.95;margin:14px 0 18px}
+.vsec em{font-style:normal;color:var(--green-hi)}
+.vgrid-2{grid-template-columns:repeat(2,1fr)}
+.vthumb .vshot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 100%}
+@media(max-width:760px){.vgrid-2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -72,6 +77,25 @@ body{background:var(--ink);color:var(--paper)}
         <p>Un clip real de ciclistas en ruta, en cámara lenta y tratado con el negro y verde de la marca. Se carga recién cuando aparece en pantalla y pesa menos de 3 MB.</p>
         <ul><li>Video de Pexels</li><li>Carga diferida</li><li>Fotográfico</li></ul>
         <span class="vgo">Ver variante C →</span></div>
+    </a>
+  </div>
+  <p class="eyebrow" style="margin-top:clamp(48px,7vw,88px)">Propuestas · Contacto</p>
+  <h2 class="vsec">Formulario por WhatsApp: <em>dos opciones</em></h2>
+  <p class="lead">La consulta se arma sola y se manda por WhatsApp a quien le toca por turno (el cliente puede cambiar). El sitio principal muestra “Vendedor 1–5”; la alternativa, las asesoras con nombre.</p>
+  <div class="vgrid vgrid-2">
+    <a class="vcard" href="../#contacto">
+      <div class="vthumb"><img class="vshot" src="../screenshots/contacto-wa-vendedores.png" alt="" loading="lazy"><span class="letter">1</span></div>
+      <div class="vbody"><h2>Vendedor 1–5</h2>
+        <p>Avatares numerados junto al botón “Enviar por WhatsApp”. El asignado aparece marcado con el anillo verde.</p>
+        <ul><li>Sitio principal</li><li>Genérico</li></ul>
+        <span class="vgo">Ver en el sitio →</span></div>
+    </a>
+    <a class="vcard" href="contacto-nombres.html#contacto">
+      <div class="vthumb"><img class="vshot" src="../screenshots/variante-contacto.png" alt="" loading="lazy"><span class="letter">2</span></div>
+      <div class="vbody"><h2>Asesoras con nombre</h2>
+        <p>Yesi, Moni, Cami, Cintia y Maca con sus iniciales y “Asesora de ventas”. Más cercano y personal; mismos números y mismo turno.</p>
+        <ul><li>Variante</li><li>Personal</li></ul>
+        <span class="vgo">Ver variante →</span></div>
     </a>
   </div>
   <p class="vnote">Las vistas previas usan las capturas de cada variante. Video de la variante C: <a href="https://www.pexels.com/video/5790258/" target="_blank" rel="noopener">Pavel Danilyuk / Pexels</a>. Todas respetan la preferencia de “reducir movimiento” del sistema.</p>

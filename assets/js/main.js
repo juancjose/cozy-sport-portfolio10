@@ -1,4 +1,19 @@
 /* Cozy Sport — interacciones y animaciones (vanilla, sin dependencias) */
+
+/* ================================================================
+   VENDEDORES · WhatsApp del formulario de contacto
+   ⚠️ ACÁ VAN LOS NÚMEROS REALES. Los de abajo son placeholders falsos.
+   Formato wa.me: 549 + código de área sin el 0 + número sin el 15.
+   Ej.: 011 15 1234-5678  →  '5491112345678'
+   (La variante "contacto-nombres" usa estos mismos números, en el mismo orden.)
+   ================================================================ */
+const VENDEDORES = [
+  { nombre: 'Vendedor 1', corto: 'V1', tel: '5491100000001' },
+  { nombre: 'Vendedor 2', corto: 'V2', tel: '5491100000002' },
+  { nombre: 'Vendedor 3', corto: 'V3', tel: '5491100000003' },
+  { nombre: 'Vendedor 4', corto: 'V4', tel: '5491100000004' },
+  { nombre: 'Vendedor 5', corto: 'V5', tel: '5491100000005' },
+];
 (() => {
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -242,10 +257,42 @@
     box.appendChild(f); b.replaceWith(box);
   })));
 
-  /* ---------- Formulario → mailto ---------- */
+  /* ---------- Formulario → WhatsApp (vendedor asignado por turno) ---------- */
   safe('form', () => {
   const form = $('#contactForm');
-  form && form.addEventListener('submit', e => {
+  if (!form) return;
+  // La variante con nombres reemplaza solo los nombres (data-vendedores); los números son siempre los de VENDEDORES.
+  const names = (form.dataset.vendedores || '').split(',').map(s => s.trim()).filter(Boolean);
+  const rol = form.dataset.rol || '';
+  const team = VENDEDORES.map((v, i) => names[i] ? { ...v, nombre: names[i], corto: names[i].slice(0, 2) } : v);
+  const N = team.length;
+  // "El que le toca, le toca": turno rotativo por navegador. El contador arranca en un índice al azar
+  // (un sitio estático no comparte contador entre visitantes) y el asignado queda guardado,
+  // así el mismo cliente siempre habla con el mismo vendedor.
+  const store = { get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } },
+                  set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} } };
+  let idx = parseInt(store.get('cozy-vendedor'), 10);
+  if (!(idx >= 0 && idx < N)) {
+    let rr = parseInt(store.get('cozy-turno'), 10);
+    if (!(rr >= 0)) rr = Math.floor(Math.random() * N);
+    idx = rr % N; store.set('cozy-turno', String(rr + 1)); store.set('cozy-vendedor', String(idx));
+  }
+  const btnsBox = $('#sellerBtns'), now = $('#sellerNow');
+  const btns = team.map((v, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'seller'; b.textContent = v.corto; b.dataset.name = v.nombre;
+    b.setAttribute('aria-label', 'Hablar con ' + v.nombre + (rol ? ', ' + rol.toLowerCase() : ''));
+    b.addEventListener('click', () => { idx = i; store.set('cozy-vendedor', String(i)); paint(); });
+    btnsBox && btnsBox.appendChild(b);
+    return b;
+  });
+  const paint = () => {
+    btns.forEach((b, i) => b.setAttribute('aria-pressed', String(i === idx)));
+    if (now) now.innerHTML = 'Te atiende: <b>' + team[idx].nombre + '</b>' + (rol ? ' <span class="seller-rol">' + rol + '</span>' : '');
+  };
+  paint();
+
+  form.addEventListener('submit', e => {
     e.preventDefault();
     const fd = new FormData(form), note = $('#formNote') || {style: {}};
     if (!fd.get('nombre') || !fd.get('email') || !fd.get('mensaje')) {
@@ -254,11 +301,26 @@
       form.querySelector(':invalid')?.focus();
       return;
     }
-    const body = [...fd.entries()].filter(([, v]) => v).map(([k, v]) => `${k[0].toUpperCase() + k.slice(1)}: ${v}`).join('\n');
-    location.href = `mailto:info@cozysport.com?subject=${encodeURIComponent('Consulta web — ' + (fd.get('equipo') || fd.get('nombre')))}&body=${encodeURIComponent(body)}`;
-    note.style.color = ''; note.textContent = '¡Listo! Se abrió tu correo con la consulta. Si no se abrió, escribinos a info@cozysport.com.';
+    const v = (k) => String(fd.get(k) || '').trim() || '—';
+    const text = [
+      'Hola! Te escribo desde la web de Cozy Sport.',
+      '',
+      '*Nombre:* ' + v('nombre'),
+      '*Email:* ' + v('email'),
+      '*Teléfono:* ' + v('telefono'),
+      '*Equipo/Club:* ' + v('equipo'),
+      '*Disciplina:* ' + v('disciplina'),
+      '*Cantidad:* ' + v('cantidad'),
+      '',
+      '*Idea:*',
+      v('mensaje'),
+    ].join('\n');
+    const seller = team[idx];
+    const url = 'https://wa.me/' + seller.tel + '?text=' + encodeURIComponent(text);
+    const w = window.open(url, '_blank');
+    if (w) { try { w.opener = null; } catch (_) {} } else location.href = url;
+    note.style.color = ''; note.textContent = '¡Listo! Se abrió WhatsApp con tu consulta para ' + seller.nombre + '. Si no se abrió, revisá que tu navegador permita ventanas emergentes.';
   });
-
   });
 
   const yr = $('#yr'); if (yr) yr.textContent = new Date().getFullYear();

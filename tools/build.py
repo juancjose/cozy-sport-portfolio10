@@ -38,6 +38,20 @@ def bust(t):
         t = re.sub(r'((?:\.\./)?' + re.escape(p) + r')(\?v=[0-9a-f]+)?"', lambda m: f'{m.group(1)}?v={h}"', t)
     return t
 s = bust(s)
+# Variante de contacto con nombres (misma página, vendedoras con nombre; mismos números que VENDEDORES en main.js)
+def variante_contacto(t):
+    t = re.sub(r'((?:src|href|content|poster)=")(?=assets/|favicon)', r'\1../', t)
+    t = re.sub(r'(srcset="[^"]*")', lambda m: re.sub(r'(^srcset="|,\s*)assets/', r'\1../assets/', m.group(1)), t)
+    t = t.replace('<title>', '<title>Variante · Contacto con nombres · ', 1)
+    t = t.replace('</head>', '<meta name="robots" content="noindex">\n<link rel="stylesheet" href="assets/variantes.css">\n</head>', 1)
+    t = t.replace('<form class="form rv" id="contactForm"', '<form class="form rv" id="contactForm" data-vendedores="Yesi,Moni,Cami,Cintia,Maca" data-rol="Asesora de ventas"', 1)
+    i = t.index('</header>', t.index('class="hdr"')) + len('</header>')
+    bar = ('\n<div class="varbar" role="note"><a class="back" href="index.html">← Comparar variantes</a>'
+           '<span class="name"><b>Contacto</b> Asesoras con nombre</span>'
+           '<nav aria-label="Variantes"><a href="../#contacto">Original<span> · Vendedor 1–5</span></a>'
+           '<a href="contacto-nombres.html#contacto" aria-current="page">Nombres<span> · Yesi, Moni…</span></a></nav></div>')
+    return t[:i] + bar + t[i:]
+open(f'{ROOT}/variantes/contacto-nombres.html', 'w').write(variante_contacto(s))
 for f in glob.glob(f'{ROOT}/variantes/*.html'):
     t = open(f).read(); u = bust(t)
     if u != t: open(f, 'w').write(u)
