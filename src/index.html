@@ -376,9 +376,10 @@
         </div>
       </div>
       <form class="form rv" id="contactForm" style="--d:2" novalidate>
+        <div class="form-head"><p class="form-title">Contanos tu proyecto</p><p class="form-req"><span aria-hidden="true">*</span> Obligatorio</p></div>
         <div class="row">
-          <div class="field"><label for="f-name">Nombre</label><input id="f-name" name="nombre" autocomplete="name" required></div>
-          <div class="field"><label for="f-mail">Email</label><input id="f-mail" name="email" type="email" autocomplete="email" required></div>
+          <div class="field"><label for="f-name">Nombre <span class="req" aria-hidden="true">*</span></label><input id="f-name" name="nombre" autocomplete="name" required></div>
+          <div class="field"><label for="f-mail">Email <span class="req" aria-hidden="true">*</span></label><input id="f-mail" name="email" type="email" autocomplete="email" required></div>
         </div>
         <div class="row">
           <div class="field"><label for="f-tel">Teléfono</label><input id="f-tel" name="telefono" type="tel" autocomplete="tel"></div>
@@ -388,9 +389,11 @@
           <div class="field"><label for="f-sport">Disciplina</label><select id="f-sport" name="disciplina"><option>Ciclismo</option><option>Running</option><option>Triatlón</option><option>Fútbol</option><option>Footgolf</option><option>Aguas abiertas</option><option>Otra</option></select></div>
           <div class="field"><label for="f-qty">Cantidad aproximada</label><input id="f-qty" name="cantidad" inputmode="numeric" placeholder="Ej.: 20 prendas"></div>
         </div>
-        <div class="field"><label for="f-msg">Tu idea</label><textarea id="f-msg" name="mensaje" placeholder="Contanos qué querés: prendas, colores, logos, fechas…" required></textarea></div>
-        <button class="btn" type="submit">Enviar consulta <svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
-        <p class="note" id="formNote">Al enviar se abrirá tu programa de correo con el mensaje listo para info@cozysport.com.</p>
+        <div class="field"><label for="f-msg">Tu idea <span class="req" aria-hidden="true">*</span></label><textarea id="f-msg" name="mensaje" placeholder="Contanos qué querés: prendas, colores, logos, fechas…" required></textarea></div>
+        <div class="form-foot">
+          <button class="btn form-send" type="submit">Enviar consulta <svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <p class="note" id="formNote" aria-live="polite">Al enviar se abrirá tu programa de correo con el mensaje listo para info@cozysport.com.</p>
+        </div>
       </form>
     </div>
     <div class="map rv">

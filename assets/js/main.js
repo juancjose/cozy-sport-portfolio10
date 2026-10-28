@@ -250,7 +250,7 @@
     const fd = new FormData(form), note = $('#formNote') || {style: {}};
     if (!fd.get('nombre') || !fd.get('email') || !fd.get('mensaje')) {
       note.textContent = 'Completá nombre, email y tu idea para poder enviarte una respuesta.';
-      note.style.color = '#b42318';
+      note.style.color = '#ff8f80';
       form.querySelector(':invalid')?.focus();
       return;
     }
