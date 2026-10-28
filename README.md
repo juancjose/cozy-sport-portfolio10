@@ -1,9 +1,11 @@
 # Cozy Sport · Sitio web
 
+**🔗 Ver la página online: [juancjose.github.io/cozy-sport-portfolio10](https://juancjose.github.io/cozy-sport-portfolio10/)**
+
 Sitio estático de **Cozy Sport**, una fábrica argentina de indumentaria deportiva personalizada para equipos y deportistas (Beccar, desde 1983). El contenido viene de [cozysport.com](https://cozysport.com/) y está corregido y ampliado.
 
 ## Secciones
-Hero animado con ciclista, Nosotros, Proceso (con una ruta que se dibuja al hacer scroll), Servicios, Disciplinas, Línea Ciclismo (maillots y video), Taller de costura (las 6 etapas de producción), Historia, Equipo (formación en cancha), #TeamCozy, Tienda online, Preguntas frecuentes y Contacto (con mapa y formulario por mail).
+Hero con la foto de la fachada y una línea de ruta animada (Largada a Meta), Nosotros, Proceso (con una ruta que se dibuja al hacer scroll), Servicios, Disciplinas, Línea Ciclismo (maillots y video), Taller de costura (las 6 etapas de producción), Historia, Tienda online, Preguntas frecuentes y Contacto (con mapa y formulario por mail).
 
 ## Estructura
 ```
