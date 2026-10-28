@@ -280,7 +280,8 @@ const VENDEDORES = [
   const btnsBox = $('#sellerBtns'), now = $('#sellerNow');
   const btns = team.map((v, i) => {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'seller'; b.textContent = v.corto; b.dataset.name = v.nombre;
+    b.type = 'button'; b.className = 'seller'; b.dataset.name = v.nombre;
+    b.innerHTML = '<svg aria-hidden="true"><use href="#i-user"/></svg>';
     b.setAttribute('aria-label', 'Hablar con ' + v.nombre + (rol ? ', ' + rol.toLowerCase() : ''));
     b.addEventListener('click', () => { idx = i; store.set('cozy-vendedor', String(i)); paint(); });
     btnsBox && btnsBox.appendChild(b);
