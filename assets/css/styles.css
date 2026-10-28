@@ -358,7 +358,7 @@ section{position:relative}
   color:#9ea5a0;background:#181b19;border:1px solid rgba(255,255,255,.12);
   transition:border-color .25s,color .25s,box-shadow .25s,background-color .25s}
 .seller svg{width:17px;height:17px;display:block;pointer-events:none}
-.seller:hover{color:#e4e7e4;border-color:rgba(255,255,255,.28)}
+
 .seller[aria-pressed="true"]{color:var(--green-hi);background:#1a211c;border-color:rgba(46,229,102,.9);box-shadow:0 0 0 2px #141715,0 0 0 3px rgba(46,229,102,.35)}
 .seller:focus-visible{outline:2px solid var(--green-hi);outline-offset:3px;border-radius:50%}
 /* Tooltip con el nombre, arriba del círculo, con flechita */
@@ -366,14 +366,17 @@ section{position:relative}
 .seller::after{content:attr(data-name);bottom:calc(100% + 9px);transform:translate(-50%,3px);white-space:nowrap;
   font:500 .72rem/1 var(--body);letter-spacing:0;color:#e4e7e4;background:#202422;border:1px solid rgba(255,255,255,.12);padding:6px 9px;border-radius:7px;box-shadow:0 6px 16px -8px rgba(0,0,0,.7)}
 .seller::before{content:"";bottom:calc(100% + 4px);width:8px;height:8px;background:#202422;border-right:1px solid rgba(255,255,255,.12);border-bottom:1px solid rgba(255,255,255,.12);transform:translate(-50%,3px) rotate(45deg);z-index:6}
-.seller:hover::after,.seller:focus-visible::after{opacity:1;transform:translate(-50%,0)}
-.seller:hover::before,.seller:focus-visible::before{opacity:1;transform:translate(-50%,0) rotate(45deg)}
+/* el tooltip aparece solo con mouse (hover real) o con foco por teclado; en táctil no queda pegado */
+@media(hover:hover) and (pointer:fine){.seller:hover{color:#e4e7e4;border-color:rgba(255,255,255,.28)}.seller:hover::after{opacity:1;transform:translate(-50%,0)}.seller:hover::before{opacity:1;transform:translate(-50%,0) rotate(45deg)}}
+.seller:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+.seller:focus-visible::before{opacity:1;transform:translate(-50%,0) rotate(45deg)}
 .seller-now{margin:0;font-size:.78rem;line-height:1.35;color:#8f9691}
 .seller-now b{color:#d6dad7;font-weight:500}
 .seller-rol{display:block;margin-top:3px;font:500 .6rem/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#7d847f}
 @media(max-width:599px){.form-foot{flex-direction:column;align-items:stretch}.form-send{width:100%}}
 @media (prefers-reduced-motion:reduce){.form-send:active{transform:none}.seller,.seller::after,.seller::before{transition:none}}
-.map{margin-top:clamp(40px,6vw,80px);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);aspect-ratio:16/7;min-height:320px;position:relative;background:var(--ink-2)}
+.map{width:100%;max-width:100%;min-width:0;margin-top:clamp(40px,6vw,80px);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);aspect-ratio:16/7;min-height:320px;position:relative;background:var(--ink-2)}
+@media(max-width:700px){.map{aspect-ratio:auto;height:320px}}
 .map iframe{width:100%;height:100%;border:0;filter:grayscale(1) invert(.92) contrast(.9);transition:filter .5s}
 .map:hover iframe{filter:none}
 

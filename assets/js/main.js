@@ -324,5 +324,16 @@ const VENDEDORES = [
   });
   });
 
+  /* ---------- Barra de variantes (solo páginas de prueba): cerrar y apartarse en el formulario ---------- */
+  safe('varbar', () => {
+    const vb = $('.varbar'); if (!vb) return;
+    const x = $('.varbar-x', vb);
+    let closed = false; try { closed = sessionStorage.getItem('cozy-varbar') === '0'; } catch (_) {}
+    if (closed) vb.classList.add('closed');
+    x && x.addEventListener('click', () => { vb.classList.add('closed'); try { sessionStorage.setItem('cozy-varbar', '0'); } catch (_) {} });
+    const zone = $('#contacto');
+    if (zone && 'IntersectionObserver' in window) new IntersectionObserver(([e]) => vb.classList.toggle('away', e.isIntersecting && innerWidth < 1000), { rootMargin: '0px 0px -30% 0px' }).observe(zone);
+  });
+
   const yr = $('#yr'); if (yr) yr.textContent = new Date().getFullYear();
 })();

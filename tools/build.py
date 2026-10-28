@@ -1,7 +1,7 @@
 """Genera index.html a partir de src/index.html.
 Expande: <!--img:nombre|alt|sizes|clase|eager-->,
 <!--sprite--> y <!--credits--> (desde assets/img/credits.json)."""
-import json, math, re, html
+import json, math, re, html, os
 ROOT = __file__.rsplit('/tools/', 1)[0]
 M = {i['name']: i for i in json.load(open(f'{ROOT}/assets/img/credits.json'))}
 
@@ -49,11 +49,18 @@ def variante_contacto(t):
     bar = ('\n<div class="varbar" role="note"><a class="back" href="index.html">← Comparar variantes</a>'
            '<span class="name"><b>Contacto</b> Asesoras con nombre</span>'
            '<nav aria-label="Variantes"><a href="../#contacto">Original<span> · Vendedor 1–5</span></a>'
-           '<a href="contacto-nombres.html#contacto" aria-current="page">Nombres<span> · Yesi, Moni…</span></a></nav></div>')
+           '<a href="contacto-nombres.html#contacto" aria-current="page">Nombres<span> · Yesi, Moni…</span></a></nav>'
+           '<button class="varbar-x" type="button" aria-label="Ocultar barra de variantes">×</button></div>')
     return t[:i] + bar + t[i:]
 open(f'{ROOT}/variantes/contacto-nombres.html', 'w').write(variante_contacto(s))
+VL = {os.path.basename(p): hashlib.sha1(open(p, 'rb').read()).hexdigest()[:10] for p in glob.glob(f'{ROOT}/variantes/assets/*.*')}
+def bust_var(t):
+    t = bust(t)
+    for n, h in VL.items():
+        t = re.sub(r'"assets/' + re.escape(n) + r'(\?v=[0-9a-f]+)?"', f'"assets/{n}?v={h}"', t)
+    return t
 for f in glob.glob(f'{ROOT}/variantes/*.html'):
-    t = open(f).read(); u = bust(t)
+    t = open(f).read(); u = bust_var(t)
     if u != t: open(f, 'w').write(u)
 open(f'{ROOT}/index.html', 'w').write(s)
 print('index.html generado,', len(s), 'bytes')

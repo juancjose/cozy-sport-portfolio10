@@ -12,7 +12,21 @@
 @media(max-width:860px){.varbar nav a{font-size:.78rem}.varbar nav a span{display:none}}
 .varfoot{background:var(--ink);border-top:1px solid var(--line);padding:48px 0 110px;color:var(--muted);font-size:.92rem}
 .varfoot a{color:var(--green-hi)}
-.hdr.hide ~ .varbar,.hdr.hidden ~ .varbar{top:14px}
+@media(min-width:1000px){.hdr.hide ~ .varbar,.hdr.hidden ~ .varbar{top:14px}}
 @media(max-width:999px){.varbar{top:auto;bottom:12px}}
 @media(max-width:860px){.varbar{gap:8px;padding:6px 6px 6px 14px}.varbar .name{display:none}.varbar nav a span{display:none}.varbar nav a{padding:8px 12px}}
 .hero .hero-inner{position:relative;z-index:2}
+
+/* Barra compacta abajo en celu: nunca se estira (top:auto siempre), ancho al contenido y respeta el safe-area */
+.varbar{height:auto;max-width:calc(100vw - 24px);width:max-content;box-sizing:border-box;transition:opacity .3s,transform .3s}
+.varbar-x{flex:0 0 auto;width:28px;height:28px;margin-left:-4px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#cfd3cf;font:500 1rem/1 var(--body);cursor:pointer;display:grid;place-items:center;padding:0}
+.varbar-x:hover{background:rgba(255,255,255,.16);color:var(--paper)}
+.varbar.away{opacity:0;pointer-events:none;transform:translate(-50%,12px)}
+.varbar.closed{display:none}
+@media(max-width:999px){
+  .varbar,.hdr.hide ~ .varbar,.hdr.hidden ~ .varbar{top:auto!important;bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .varbar{gap:6px;padding:5px 5px 5px 12px;font-size:.74rem;white-space:nowrap}
+  .varbar nav a{padding:7px 10px;font-size:.74rem}
+}
+@media(max-width:380px){.varbar .back{font-size:0}.varbar .back::before{content:"← Variantes";font-size:.74rem}}
+@media (prefers-reduced-motion:reduce){.varbar{transition:none}}
