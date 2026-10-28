@@ -5,21 +5,35 @@
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(hover: hover) and (pointer: fine)').matches;
   const root = document.documentElement;
+  // Cada bloque corre aislado: si uno falla (p. ej. falta un elemento), los demás siguen funcionando.
+  const safe = (name, fn) => { try { fn(); } catch (err) { console.warn('[cozy] ' + name + ':', err); } };
+  const last = a => a[a.length - 1];
 
   /* ---------- Preloader ---------- */
+  safe('preloader', () => {
   const pre = $('.preloader');
   const hidePre = () => pre && pre.classList.add('done');
   if (reduce) hidePre();
   else { addEventListener('load', () => setTimeout(hidePre, 250)); setTimeout(hidePre, 1800); }
+  });
 
   /* ---------- Reveal on scroll ---------- */
-  const io = new IntersectionObserver((es) => es.forEach(e => {
-    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-  }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-  $$('.rv, .rv-img').forEach(el => reduce ? el.classList.add('in') : io.observe(el));
+  // Con movimiento reducido también se revela al entrar, pero solo con fundido (sin desplazamiento; ver CSS).
+  safe('reveal', () => {
+    const els = $$('.rv, .rv-img'), show = el => el.classList.add('in');
+    if (!('IntersectionObserver' in window)) return els.forEach(show);
+    const io = new IntersectionObserver((es) => es.forEach(e => {
+      if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -6% 0px', threshold: 0 });
+    els.forEach(el => io.observe(el));
+    // Red de seguridad: lo que quedó por encima del viewport (salto por ancla) se muestra igual
+    addEventListener('scroll', () => els.forEach(el => !el.classList.contains('in') && el.getBoundingClientRect().bottom < 0 && show(el)), { passive: true });
+  });
 
   /* ---------- Header + menú ---------- */
   const hdr = $('.hdr'), burger = $('.burger');
+  safe('menu', () => {
+  if (!burger) return;
   burger.addEventListener('click', () => {
     const open = document.body.classList.toggle('menu-open');
     burger.setAttribute('aria-expanded', String(open));
@@ -30,22 +44,26 @@
     document.body.classList.remove('menu-open'); document.body.style.overflow = ''; burger.setAttribute('aria-expanded', 'false');
   }));
   addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('menu-open')) burger.click(); });
+  });
 
   // Link activo
+  safe('nav-activo', () => {
   const links = $$('.nav a');
   const secIO = new IntersectionObserver(es => es.forEach(e => {
     if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
   }), { rootMargin: '-45% 0px -50% 0px' });
-  links.forEach(a => { const h = a.getAttribute('href'); const s = h.startsWith('#') && $(h); s && secIO.observe(s); });
+  links.forEach(a => { const h = a.getAttribute('href') || ''; const s = h.length > 1 && h.startsWith('#') && $(h); s && secIO.observe(s); });
+  });
 
   /* ---------- Scroll: header, parallax, ruta, timeline ---------- */
+  safe('scroll', () => {
   const par = $$('[data-parallax]');
   const route = $('#routeDraw'), routeWrap = $('.route-wrap'), routeBase = $('#routeBase'), routeBike = $('#routeBike');
   const tl = $('#timeline');
   let routeLen = 0;
   // Ruta que conecta las etapas: se recalcula según el layout real
   const buildRoute = () => {
-    if (!route) return;
+    if (!route || !routeWrap || !routeBase || !$('.finish', routeWrap)) return;
     const wr = routeWrap.getBoundingClientRect();
     const pts = $$('.step-n b', routeWrap).map(b => { const r = b.getBoundingClientRect(); return [r.left - wr.left + r.width / 2, r.top - wr.top + r.height / 2, r.bottom - wr.top]; });
     const steps = $$('.step', routeWrap).map(s => s.getBoundingClientRect().bottom - wr.top);
@@ -62,7 +80,7 @@
     routeLen = route.getTotalLength();
     route.style.strokeDasharray = routeLen;
   };
-  buildRoute();
+  safe('ruta-etapas', buildRoute);
   let lastY = scrollY, ticking = false;
   const vis = new Set();
   const visIO = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? vis.add(e.target) : vis.delete(e.target)), { rootMargin: '20% 0px' });
@@ -71,7 +89,8 @@
     const r = el.getBoundingClientRect(), vh = innerHeight;
     return Math.min(1, Math.max(0, (vh * start - r.top) / (r.height + vh * (start - end))));
   };
-  const onScroll = () => {
+  const onScroll = () => { try { scrollStep(); } catch (err) { console.warn('[cozy] scroll:', err); } ticking = false; };
+  const scrollStep = () => {
     const y = scrollY;
     if (hdr) {
       hdr.classList.toggle('scrolled', y > 40);
@@ -84,25 +103,31 @@
         const c = (r.top + r.height / 2 - innerHeight / 2);
         el.style.transform = `translate3d(0,${(-c * parseFloat(el.dataset.parallax)).toFixed(1)}px,0)`;
       });
-      if (route) {
-        const k = sectionProgress(routeWrap, 0.75, 0.55);
-        route.style.strokeDashoffset = (routeLen * (1 - k)).toFixed(1);
-        const pt = route.getPointAtLength(routeLen * k);
-        routeBike.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})`);
+    }
+    // La ruta de etapas se dibuja con el scroll también con movimiento reducido (es un trazo, no un desplazamiento);
+    // en ese caso se oculta la bici que la recorre.
+    if (route && routeLen && routeWrap) {
+      const k = sectionProgress(routeWrap, 0.75, 0.55);
+      route.style.strokeDashoffset = (routeLen * (1 - k)).toFixed(1);
+      if (routeBike) {
+        if (reduce) routeBike.style.display = 'none';
+        else { const pt = route.getPointAtLength(routeLen * k); routeBike.setAttribute('transform', `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)})`); }
       }
-    } else if (route) { route.style.strokeDashoffset = 0; routeBike.style.display = 'none'; }
+    }
     if (tl) tl.style.setProperty('--tp', sectionProgress(tl, 0.7, 0.5).toFixed(3));
-    ticking = false;
   };
   addEventListener('scroll', () => {
     if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
   }, { passive: true });
-  addEventListener('resize', () => { buildRoute(); onScroll(); });
-  addEventListener('load', () => { buildRoute(); onScroll(); });
-  document.fonts && document.fonts.ready.then(() => { buildRoute(); onScroll(); });
+  const rebuild = () => { safe('ruta-etapas', buildRoute); onScroll(); };
+  addEventListener('resize', rebuild);
+  addEventListener('load', rebuild);
+  document.fonts && document.fonts.ready.then(rebuild);
   onScroll();
+  });
 
   /* ---------- Taller: etapas con imagen sticky ---------- */
+  safe('taller', () => {
   const stageImgs = $$('.ws-stage img'), wsNum = $('#wsNum');
   const wsIO = new IntersectionObserver(es => es.forEach(e => {
     if (!e.isIntersecting) return;
@@ -112,9 +137,10 @@
     if (wsNum) wsNum.textContent = String(i + 1).padStart(2, '0');
   }), { rootMargin: '-45% 0px -45% 0px' });
   $$('.ws-step').forEach(s => wsIO.observe(s));
+  });
 
   /* ---------- Tilt 3D ---------- */
-  if (fine && !reduce) {
+  if (fine && !reduce) safe('tilt', () => {
     document.addEventListener('pointermove', e => {
       const el = e.target.closest('[data-tilt]');
       if (!el) return;
@@ -128,11 +154,13 @@
       const el = e.target.closest('[data-tilt]');
       if (el && !el.contains(e.relatedTarget)) el.style.transform = '';
     });
-  }
+  });
 
   /* ---------- Hero: la ruta se dibuja (al cargar y con el scroll) ---------- */
+  safe('ruta-hero', () => {
   const hrBox = $('.hroute');
-  if (hrBox) {
+  const HR_IDS = ['hrLine', 'hrGlow', 'hrGhost', 'hrArea', 'hrStroke', 'hrGrid', 'hrTicks', 'hrStart', 'hrEnd', 'hrMarker', 'hrKm', 'hrRevealRect'];
+  if (hrBox && HR_IDS.every(id => document.getElementById(id))) {
     const g = id => document.getElementById(id), NS = 'http://www.w3.org/2000/svg';
     const line = g('hrLine'), KM = 100;
     // perfil ilustrativo [x 0..1, altura 0..1]
@@ -149,7 +177,7 @@
       g('hrRevealRect').setAttribute('width', pt.x);
       g('hrMarker').setAttribute('transform', `translate(${f1(pt.x)},${f1(pt.y)})`);
       g('hrMarker').style.opacity = p < .004 ? 0 : 1;
-      const f = (pt.x - pts[0][0]) / (pts.at(-1)[0] - pts[0][0]);
+      const f = (pt.x - pts[0][0]) / (last(pts)[0] - pts[0][0]);
       g('hrKm').textContent = 'km ' + Math.round(f * KM);
       const pill = g('hrKm').parentNode, dx = Math.max(40 - pt.x, Math.min(0, BW - 40 - pt.x));
       pill.setAttribute('transform', `translate(${f1(dx)},0)`);
@@ -163,7 +191,7 @@
       pts = PROF.map(([x, y]) => [mx + x * (W - 2 * mx), base - y * (base - top)]);
       const d = smooth(pts);
       ['hrLine', 'hrGlow', 'hrGhost'].forEach(id => g(id).setAttribute('d', d));
-      g('hrArea').setAttribute('d', d + `L${f1(pts.at(-1)[0])},${base}L${f1(pts[0][0])},${base}Z`);
+      g('hrArea').setAttribute('d', d + `L${f1(last(pts)[0])},${base}L${f1(pts[0][0])},${base}Z`);
       g('hrStroke').setAttribute('x1', mx); g('hrStroke').setAttribute('x2', W - mx);
       len = line.getTotalLength();
       line.style.strokeDasharray = g('hrGlow').style.strokeDasharray = `${len} ${len}`;
@@ -178,12 +206,14 @@
         ticks.push([k / KM, t]);
       }
       g('hrStart').setAttribute('transform', `translate(${f1(pts[0][0])},${f1(pts[0][1])})`);
-      g('hrEnd').setAttribute('transform', `translate(${f1(pts.at(-1)[0])},${f1(pts.at(-1)[1])})`);
-      draw(reduce ? 1 : shown);
+      g('hrEnd').setAttribute('transform', `translate(${f1(last(pts)[0])},${f1(last(pts)[1])})`);
+      draw(shown);
     };
     layout();
-    let rw = innerWidth; addEventListener('resize', () => { if (innerWidth !== rw || !reduce) { rw = innerWidth; layout(); } });
-    if (!reduce) {
+    addEventListener('resize', layout);
+    // La ruta se dibuja siempre (también con 'efectos de animación' desactivados en Windows/macOS/teléfono):
+    // es un trazo que avanza, sin desplazar contenido.
+    {
       // intro: arranca cuando la franja es visible (al cargar o al bajar) y lleva la Z al 40%;
       // el scroll la lleva hasta la meta.
       const scrollP = () => { const r = hrBox.getBoundingClientRect(), vh = innerHeight; return Math.max(0, Math.min(1, (vh - r.bottom) / (vh * .5))); };
@@ -199,9 +229,10 @@
       new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on && !raf) raf = requestAnimationFrame(loop); }, { threshold: .2 }).observe(hrBox);
     }
   }
+  });
 
   /* ---------- Video (carga diferida) ---------- */
-  $$('[data-yt]').forEach(b => b.addEventListener('click', () => {
+  safe('video', () => $$('[data-yt]').forEach(b => b.addEventListener('click', () => {
     const f = document.createElement('iframe');
     f.src = `https://www.youtube-nocookie.com/embed/${b.dataset.yt}?autoplay=1&rel=0`;
     f.title = b.getAttribute('aria-label').replace('Reproducir video: ', '');
@@ -209,13 +240,14 @@
     f.allowFullscreen = true;
     const box = Object.assign(document.createElement('div'), { className: 'video' });
     box.appendChild(f); b.replaceWith(box);
-  }));
+  })));
 
   /* ---------- Formulario → mailto ---------- */
+  safe('form', () => {
   const form = $('#contactForm');
   form && form.addEventListener('submit', e => {
     e.preventDefault();
-    const fd = new FormData(form), note = $('#formNote');
+    const fd = new FormData(form), note = $('#formNote') || {style: {}};
     if (!fd.get('nombre') || !fd.get('email') || !fd.get('mensaje')) {
       note.textContent = 'Completá nombre, email y tu idea para poder enviarte una respuesta.';
       note.style.color = '#b42318';
@@ -225,6 +257,8 @@
     const body = [...fd.entries()].filter(([, v]) => v).map(([k, v]) => `${k[0].toUpperCase() + k.slice(1)}: ${v}`).join('\n');
     location.href = `mailto:info@cozysport.com?subject=${encodeURIComponent('Consulta web — ' + (fd.get('equipo') || fd.get('nombre')))}&body=${encodeURIComponent(body)}`;
     note.style.color = ''; note.textContent = '¡Listo! Se abrió tu correo con la consulta. Si no se abrió, escribinos a info@cozysport.com.';
+  });
+
   });
 
   const yr = $('#yr'); if (yr) yr.textContent = new Date().getFullYear();

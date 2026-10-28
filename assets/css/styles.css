@@ -348,11 +348,17 @@ section{position:relative}
 /* ---------- Movimiento reducido ---------- */
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
-  .rv{opacity:1;transform:none}.rv-img{clip-path:none}
+  /* sin desplazamiento, pero el contenido igual aparece con un fundido suave */
+  .rv{transform:none!important;transition:opacity .8s ease!important;transition-delay:calc(var(--d,0) * 90ms)!important}.rv-img{clip-path:none;opacity:0;transition:opacity .7s ease!important}.rv-img.in{opacity:1}
   .hero h1 .line>span{transform:none}.hero .lead,.hero .ctas,.hero-tags{opacity:1}
 
   .preloader .pre-wm{opacity:1;animation:none}
+  /* hero: fundido en lugar de deslizamiento */
+  .hero h1 .line>span,.hero .lead,.hero .ctas,.hero-tags{animation:rmFade .9s ease both!important;animation-delay:calc(.15s + var(--i,0) * .12s)!important}
+  .hero .lead{animation-delay:.6s!important}.hero .ctas{animation-delay:.75s!important}
+  #hrLine,#hrGlow{transition:none!important}
 }
+@keyframes rmFade{from{opacity:0}to{opacity:1}}
 
 .ftr-cols>*{min-width:0}
 .ftr a,.ftr p{overflow-wrap:anywhere}
