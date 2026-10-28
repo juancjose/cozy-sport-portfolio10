@@ -109,7 +109,6 @@ const VENDEDORES_ROL = 'Asesora de ventas';
     const y = scrollY;
     if (hdr) {
       hdr.classList.toggle('scrolled', y > 40);
-      hdr.classList.toggle('hide', y > 600 && y > lastY && !document.body.classList.contains('menu-open'));
     }
     lastY = y;
     if (!reduce) {
