@@ -285,8 +285,6 @@ section{position:relative}
 .story .txt{padding:0 26px 26px;color:#c9cec9;columns:1;column-gap:48px}
 @media(min-width:900px){.story .txt{columns:2}}
 .story .txt p{margin:0 0 1em;break-inside:avoid}
-.quote{font:800 clamp(1.8rem,4.4vw,3.6rem)/1 var(--display);font-stretch:75%;text-transform:uppercase;margin:clamp(70px,10vw,130px) 0 0;max-width:20ch}
-.quote span{color:var(--green-hi)}
 
 /* ---------- Tienda ---------- */
 .shop{position:relative;overflow:hidden;isolation:isolate;min-height:78vh;display:grid;place-items:center;text-align:center}
