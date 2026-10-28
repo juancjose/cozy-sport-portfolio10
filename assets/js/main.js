@@ -387,3 +387,12 @@ const VENDEDORES_ROL = 'Asesora de ventas';
 
   const yr = $('#yr'); if (yr) yr.textContent = new Date().getFullYear();
 })();
+
+/* Logo: vuelve arriba de todo */
+document.querySelectorAll('a.logo').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  if (document.body.classList.contains('menu-open')) { document.body.classList.remove('menu-open'); document.body.style.overflow = ''; const b = document.querySelector('.burger'); if (b) { b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-label', 'Abrir menú'); } }
+  const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: rm ? 'auto' : 'smooth' });
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}));
