@@ -257,49 +257,97 @@ const VENDEDORES_ROL = 'Asesora de ventas';
     box.appendChild(f); b.replaceWith(box);
   })));
 
-  /* ---------- Formulario → WhatsApp (vendedor asignado por turno) ---------- */
+  /* ---------- Formulario → WhatsApp: "Hablá con nuestras vendedoras" + medialuna de burbujas ---------- */
+  // El cliente elige con quién hablar. Nombres y números salen solo de VENDEDORES (arriba de todo).
   safe('form', () => {
-  const form = $('#contactForm');
-  if (!form) return;
-  const rol = VENDEDORES_ROL;
-  const team = VENDEDORES;
-  const N = team.length;
-  // "El que le toca, le toca": turno rotativo por navegador. El contador arranca en un índice al azar
-  // (un sitio estático no comparte contador entre visitantes) y el asignado queda guardado,
-  // así el mismo cliente siempre habla con el mismo vendedor.
+  const form = $('#contactForm'), talk = $('#talk'), btn = $('#talkBtn'), arc = $('#talkArc');
+  if (!form || !talk || !btn || !arc) return;
+  const note = $('#formNote') || { style: {} };
+  const team = VENDEDORES, N = team.length;
   const store = { get: k => { try { return localStorage.getItem(k); } catch (_) { return null; } },
                   set: (k, v) => { try { localStorage.setItem(k, v); } catch (_) {} } };
-  let idx = parseInt(store.get('cozy-vendedor'), 10);
-  if (!(idx >= 0 && idx < N)) {
-    let rr = parseInt(store.get('cozy-turno'), 10);
-    if (!(rr >= 0)) rr = Math.floor(Math.random() * N);
-    idx = rr % N; store.set('cozy-turno', String(rr + 1)); store.set('cozy-vendedor', String(idx));
-  }
-  const btnsBox = $('#sellerBtns'), now = $('#sellerNow');
-  const btns = team.map((v, i) => {
+  let last = parseInt(store.get('cozy-vendedor'), 10);
+  if (!(last >= 0 && last < N)) last = -1;
+
+  const cap = document.createElement('p');
+  cap.className = 'talk-cap'; cap.setAttribute('aria-hidden', 'true');
+  cap.innerHTML = 'Elegí con quién hablar<small>' + VENDEDORES_ROL.replace(/^(\S+)/, '$1s') + '</small>';
+  arc.appendChild(cap);
+  arc.setAttribute('aria-label', 'Elegí con quién hablar por WhatsApp');
+  // Ángulos repartidos en media luna, de izquierda a derecha (5 → 162°, 126°, 90°, 54°, 18°)
+  const bubs = team.map((v, i) => {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'seller'; b.dataset.name = v.nombre;
-    b.innerHTML = '<svg aria-hidden="true"><use href="#i-user"/></svg>';
-    b.setAttribute('aria-label', 'Hablar con ' + v.nombre + (rol ? ', ' + rol.toLowerCase() : ''));
-    b.addEventListener('click', () => { idx = i; store.set('cozy-vendedor', String(i)); paint(); });
-    btnsBox && btnsBox.appendChild(b);
+    b.type = 'button'; b.className = 'bub'; b.tabIndex = -1;
+    b.style.setProperty('--a', (180 - (180 / N) * (i + .5)) + 'deg');
+    b.style.setProperty('--d', (i * 45) + 'ms');
+    b.setAttribute('aria-label', 'Escribirle a ' + v.nombre + ' por WhatsApp');
+    b.innerHTML = '<svg aria-hidden="true"><use href="#i-user"/></svg><span class="bub-name" aria-hidden="true">' + v.nombre + '</span>';
+    b.addEventListener('click', () => send(i));
+    arc.appendChild(b);
     return b;
   });
-  const paint = () => {
-    btns.forEach((b, i) => b.setAttribute('aria-pressed', String(i === idx)));
-    if (now) now.innerHTML = 'Te atiende: <b>' + team[idx].nombre + '</b>' + (rol ? ' <span class="seller-rol">' + rol + '</span>' : '');
-  };
-  paint();
+  const mark = () => bubs.forEach((b, i) => { b.classList.toggle('last', i === last); });
+  mark();
 
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const fd = new FormData(form), note = $('#formNote') || {style: {}};
-    if (!fd.get('nombre') || !fd.get('email') || !fd.get('mensaje')) {
-      note.textContent = 'Completá nombre, email y tu idea para poder enviarte una respuesta.';
-      note.style.color = '#ff8f80';
-      form.querySelector(':invalid')?.focus();
-      return;
-    }
+  let isOpen = false, tClose = 0, hold = false;
+  const toBtn = () => { hold = true; btn.focus(); hold = false; };
+  const setOpen = v => {
+    clearTimeout(tClose);
+    if (v === isOpen) return;
+    isOpen = v; talk.classList.toggle('open', v); btn.setAttribute('aria-expanded', String(v));
+    if (!v && arc.contains(document.activeElement)) toBtn();
+  };
+  const start = () => (last >= 0 ? last : Math.floor(N / 2));
+  const focusBub = i => { const k = (i + N) % N; bubs.forEach((b, j) => { b.tabIndex = j === k ? 0 : -1; }); bubs[k].focus(); };
+  bubs[start()].tabIndex = 0;
+
+  // Mouse: se abre al pasar por encima; un puente invisible y una demora corta lo mantienen abierto hasta las burbujas
+  if (fine) {
+    talk.addEventListener('mouseenter', () => setOpen(true));
+    talk.addEventListener('mouseleave', () => {
+      clearTimeout(tClose);
+      tClose = setTimeout(() => { const a = document.activeElement; if (!(arc.contains(a) && a.matches(':focus-visible'))) setOpen(false); }, 280);
+    });
+  }
+  // Teclado: al enfocar el botón se abre; flechas para recorrer la medialuna
+  btn.addEventListener('focus', () => { if (!hold && btn.matches(':focus-visible')) setOpen(true); });
+  btn.addEventListener('click', e => {
+    if (e.detail === 0) { setOpen(true); focusBub(start()); }   // Enter / Espacio
+    else if (fine) setOpen(true);
+    else setOpen(!isOpen);                                        // táctil: toca para abrir y cerrar
+  });
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); setOpen(true); focusBub(start()); }
+  });
+  arc.addEventListener('keydown', e => {
+    const i = bubs.indexOf(document.activeElement); if (i < 0) return;
+    const go = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: N - 1 }[e.key];
+    if (go !== undefined) { e.preventDefault(); focusBub(go); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && isOpen) { const inside = talk.contains(document.activeElement); setOpen(false); if (inside) toBtn(); }
+  });
+  document.addEventListener('pointerdown', e => { if (isOpen && !talk.contains(e.target)) setOpen(false); });
+  talk.addEventListener('focusout', () => setTimeout(() => {
+    if (isOpen && !talk.contains(document.activeElement) && !(fine && talk.matches(':hover'))) setOpen(false);
+  }, 0));
+
+  const check = () => {
+    const bad = [...form.querySelectorAll('[required]')].find(el => !String(el.value || '').trim())
+      || [...form.elements].find(el => el.willValidate && !el.checkValidity());
+    if (!bad) return true;
+    setOpen(false);
+    note.textContent = String(bad.value || '').trim()
+      ? 'Revisá que el email esté bien escrito para poder enviarte una respuesta.'
+      : 'Completá nombre, email y tu idea para poder enviarte una respuesta.';
+    note.style.color = '#ff8f80';
+    bad.focus();
+    return false;
+  };
+
+  const send = i => {
+    if (!check()) return;
+    const fd = new FormData(form);
     const v = (k) => String(fd.get(k) || '').trim() || '—';
     const text = [
       'Hola! Te escribo desde la web de Cozy Sport.',
@@ -314,12 +362,17 @@ const VENDEDORES_ROL = 'Asesora de ventas';
       '*Idea:*',
       v('mensaje'),
     ].join('\n');
-    const seller = team[idx];
+    const seller = team[i];
+    last = i; store.set('cozy-vendedor', String(i)); mark();
+    setOpen(false);
     const url = 'https://wa.me/' + seller.tel + '?text=' + encodeURIComponent(text);
     const w = window.open(url, '_blank');
     if (w) { try { w.opener = null; } catch (_) {} } else location.href = url;
-    note.style.color = ''; note.textContent = '¡Listo! Se abrió WhatsApp con tu consulta para ' + seller.nombre + '. Si no se abrió, revisá que tu navegador permita ventanas emergentes.';
-  });
+    note.style.color = ''; note.textContent = '¡Listo! Se abrió WhatsApp para escribirle a ' + seller.nombre + '. Si no se abrió, revisá que tu navegador permita ventanas emergentes.';
+  };
+
+  // Enter dentro del formulario: valida y abre la medialuna para elegir
+  form.addEventListener('submit', e => { e.preventDefault(); if (check()) { setOpen(true); focusBub(start()); } });
   });
 
   /* ---------- Barra de variantes (solo páginas de prueba): cerrar y apartarse en el formulario ---------- */

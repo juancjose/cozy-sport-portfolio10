@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 <link rel="preload" as="image" type="image/webp" href="assets/img/fachada-1280.webp" imagesrcset="assets/img/fachada-640.webp 640w, assets/img/fachada-1280.webp 1280w, assets/img/fachada-1728.webp 1728w" imagesizes="(min-width:1000px) 62vw, 100vw">
-<link rel="stylesheet" href="assets/css/styles.css?v=2f710f5fe6">
+<link rel="stylesheet" href="assets/css/styles.css?v=59bde0141d">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"ClothingStore","name":"Cozy Sport SA","description":"Indumentaria deportiva personalizada. Industria nacional desde 1983.","foundingDate":"1983","email":"info@cozysport.com","telephone":["+54 11 4723-3355","+54 11 4723-2255","+54 11 4723-3373"],"url":"https://cozysport.com/","address":{"@type":"PostalAddress","streetAddress":"Uruguay 3442","addressLocality":"Beccar","addressRegion":"Buenos Aires","postalCode":"1643","addressCountry":"AR"},"sameAs":["https://instagram.com/cozysport","https://www.facebook.com/cozysport","https://twitter.com/cozysport","https://www.youtube.com/channel/UCqqrq2bQ2Q-Dgik3gxvm1Yw","https://tiendacozy.com/"]}
 </script>
@@ -422,13 +422,12 @@
         </div>
         <div class="field"><label for="f-msg">Tu idea <span class="req" aria-hidden="true">*</span></label><textarea id="f-msg" name="mensaje" placeholder="Contanos qué querés: prendas, colores, logos, fechas…" required></textarea></div>
         <div class="form-foot">
-          <div class="sellers" role="group" aria-labelledby="sellerNow">
-            <div class="sellers-row" id="sellerBtns"></div>
-            <p class="seller-now" id="sellerNow" aria-live="polite">Te atiende: <b>nuestro equipo de ventas</b></p>
+          <div class="talk" id="talk">
+            <button class="talk-btn" id="talkBtn" type="button" aria-expanded="false" aria-controls="talkArc"><span class="talk-ico" aria-hidden="true"><svg><use href="#i-whatsapp"/></svg></span><span class="talk-txt">Hablá con nuestras vendedoras</span><svg class="talk-chev" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg></button>
+            <div class="talk-arc" id="talkArc" role="group" aria-label="Elegí con quién hablar por WhatsApp"></div>
           </div>
-          <button class="btn form-send" type="submit"><svg class="wa" aria-hidden="true"><use href="#i-whatsapp"/></svg> Enviar por WhatsApp</button>
         </div>
-        <p class="note" id="formNote" aria-live="polite">Al enviar se abre WhatsApp con tu consulta ya escrita: solo tenés que tocar enviar.</p>
+        <p class="note" id="formNote" aria-live="polite">Elegí con quién hablar y se abre WhatsApp con tu consulta ya escrita: solo tenés que tocar enviar.</p>
       </form>
     </div>
     <div class="map rv">
@@ -472,6 +471,6 @@
   </div>
 </footer>
 
-<script src="assets/js/main.js?v=2f0bcd398b" defer></script>
+<script src="assets/js/main.js?v=e01c054e63" defer></script>
 </body>
 </html>
