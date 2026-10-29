@@ -939,7 +939,8 @@ let W = 0, H = 0, dpr = 1, game = null, gdef = null, phase = 'idle', count = 0, 
 
 function setFab() {
   const t = getTicket();
-  fab.innerHTML = `<span class="ball"><svg viewBox="50 100 412 312" aria-hidden="true"><use href="#i-z"/></svg></span>${t ? 'Tu cupón' : 'Ganate un cupón'} <span class="pct">${pct}</span>`;
+  const ico = '<span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h14a1.5 1.5 0 0 1 1.5 1.5V10a2 2 0 0 0 0 4v2.5A1.5 1.5 0 0 1 19 18H5a1.5 1.5 0 0 1-1.5-1.5V14a2 2 0 0 0 0-4Z"/><path d="M14.5 6.5v2M14.5 11v2M14.5 15.5v2"/></svg></span>';
+  fab.innerHTML = `<span class="a">${ico}${t ? 'Tu cupón' : 'Ganate un cupón'}</span><span class="b">${pct}</span>`;
   fab.setAttribute('aria-label', t ? `Ver tu cupón de ${CUPON.descuento}` : `Jugar y ganate un cupón de ${CUPON.descuento}`);
 }
 function show(k) {
@@ -1115,6 +1116,24 @@ $('.cj-skip').addEventListener('click', close);
 back.addEventListener('click', () => { refreshSel(); show('sel'); setTimeout(focusFirst, 30); });
 root.addEventListener('pointerdown', e => { if (e.target === root) close(); });
 fab.addEventListener('click', () => open(getTicket() ? 'ticket' : 'sel'));
+// El botón flotante se corre si queda encima de un botón o link de la página (p. ej. el CTA del hero en mobile).
+const CTA = 'a,button,input,textarea,select,label,iframe,.btn';
+let avT = 0;
+function avoidCheck() {
+  avT = 0;
+  if (fab.classList.contains('off')) return;
+  const r = fab.getBoundingClientRect(); let hit = false;
+  for (const fx_ of [.08, .5, .92]) for (const fy of [.1, .9]) {
+    const els = document.elementsFromPoint(r.left + r.width * fx_, r.top + r.height * fy);
+    const el = els.find(e => e !== fab && !fab.contains(e));
+    if (el && el !== document.body && el !== document.documentElement && el.closest(CTA)) hit = true;
+  }
+  fab.classList.toggle('avoid', hit);
+}
+const avoidSoon = () => { if (!avT) avT = requestAnimationFrame(avoidCheck); };
+addEventListener('scroll', avoidSoon, { passive: true });
+addEventListener('resize', avoidSoon);
+setInterval(avoidSoon, 1200);
 
 addEventListener('keydown', e => {
   if (root.hidden) return;
