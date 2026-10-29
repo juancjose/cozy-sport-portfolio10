@@ -37,6 +37,9 @@ def bust(t):
     for p, h in V.items():
         t = re.sub(r'((?:\.\./)?' + re.escape(p) + r')(\?v=[0-9a-f]+)?"', lambda m: f'{m.group(1)}?v={h}"', t)
     return t
+# Juego "Ganate un cupón" en la página principal (overlay + botón flotante)
+s = s.replace('</head>', '<link rel="stylesheet" href="assets/css/juego.css">\n</head>', 1)
+s = s.replace('<script src="assets/js/main.js', '<script src="assets/js/juego.js" defer></script>\n<script src="assets/js/main.js', 1)
 s = bust(s)
 VL = {os.path.basename(p): hashlib.sha1(open(p, 'rb').read()).hexdigest()[:10] for p in glob.glob(f'{ROOT}/variantes/assets/*.*')}
 def bust_var(t):
@@ -48,11 +51,8 @@ for f in glob.glob(f'{ROOT}/variantes/*.html'):
     t = open(f).read(); u = bust_var(t)
     if u != t: open(f, 'w').write(u)
 open(f'{ROOT}/index.html', 'w').write(s)
-# Vista previa del juego "Ganate un cupón": la misma página + overlay del juego (no se indexa).
+# juego.html: la misma página (ya incluye el juego), sin indexar y con canonical a la principal, para que el link de vista previa siga andando.
 j = s.replace('<meta name="theme-color"', '<meta name="robots" content="noindex">\n<link rel="canonical" href="https://juancjose.github.io/cozy-sport-portfolio10/">\n<meta name="theme-color"', 1)
-j = j.replace('</head>', '<link rel="stylesheet" href="assets/css/juego.css">\n</head>', 1)
-j = j.replace('<script src="assets/js/main.js', '<script src="assets/js/juego.js" defer></script>\n<script src="assets/js/main.js', 1)
-j = bust(j)
 open(f'{ROOT}/juego.html', 'w').write(j)
 print('juego.html generado,', len(j), 'bytes')
 print('index.html generado,', len(s), 'bytes')
