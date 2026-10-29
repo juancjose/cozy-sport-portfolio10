@@ -716,7 +716,7 @@ function makeGolf() {
 
 /* ---------- AGUAS ABIERTAS: brazadas con ritmo (zona perfecta), olas para surfear ---------- */
 function makeSwim(o = {}) {
-  o = Object.assign({ goal: 80, limit: 30, waves: [17, 36, 54, 70] }, o);
+  o = Object.assign({ goal: 80, limit: 35, waves: [17, 36, 54, 70] }, o);
   const g = { id: 'swim', post: true, status: 'play', t: 0, d: 0, v: 0, k: 0, combo: 0, side: 1, armL: 0, armR: 0, why: '', splash: [], q: '', qT: 0, G: null };
   const P0 = .56, P1 = .74, G0 = .36, G1 = .92, RATE = 1 / .8;
   const waves = o.waves.filter(w => w < o.goal - 4).map(w => ({ d: w, used: false }));
@@ -831,7 +831,7 @@ function makeSwim(o = {}) {
 /* ---------- TRIATLÓN: las tres disciplinas encadenadas, versiones cortas ---------- */
 function makeTri() {
   const st = [
-    { n: 'Natación', f: () => makeSwim({ goal: 32, limit: 15, waves: [16] }) },
+    { n: 'Natación', f: () => makeSwim({ goal: 32, limit: 17, waves: [16] }) },
     { n: 'Ciclismo', f: () => makeBike({ goal: 160, lives: 3, v0: 13, v1: 18 }) },
     { n: 'Running', f: () => makeRun({ goal: 50, limit: 12, hurdles: [12, 23, 34, 44], rival: 9.8 }) }
   ];
