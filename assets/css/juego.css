@@ -66,7 +66,10 @@ html.cj-lock,html.cj-lock body{overflow:hidden!important;overscroll-behavior:non
 .cj-card2 .k{font:700 .64rem/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--green-hi);margin:0 0 10px}
 .cj-card2 h3{font-family:var(--display);font-weight:800;font-stretch:76%;text-transform:uppercase;font-size:clamp(1.6rem,4.6vw,2.2rem);line-height:.95;margin:0 0 10px}
 .cj-card2 p{margin:0 0 6px;color:#c5cac6;font-size:.92rem;line-height:1.5}
-.cj-card2 ul{list-style:none;padding:0;margin:14px 0 18px;display:grid;gap:8px}
+.cj-card2 ul{list-style:none;padding:0;margin:14px 0 14px;display:grid;gap:8px}
+.cj-card2 .tip{margin:0 0 18px;padding:10px 12px;border-radius:12px;background:rgba(46,229,102,.08);border:1px solid rgba(46,229,102,.22);color:#d9f5e1;font-size:.84rem;line-height:1.45}
+.cj-card2 .tip::before{content:"Tip · ";font:700 .62rem/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--green-hi)}
+.cj-card2 .tip[hidden]{display:none}
 .cj-card2 li{display:flex;gap:10px;align-items:baseline;font-size:.88rem;color:#dfe2df}
 .cj-card2 li kbd,.cj-res kbd{flex:none;font:700 .66rem/1 var(--mono);padding:5px 7px;border-radius:6px;background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--paper)}
 .cj-only-touch{display:none}

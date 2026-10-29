@@ -105,40 +105,118 @@ function drawRunner(c, x, yf, H, ph, opt = {}) {
   c.fillStyle = C.paper2; c.beginPath(); c.arc(sh[0] + H * .05, sh[1] - H * .1, H * .075, 0, TAU); c.fill();
 }
 
+/* ---------- JUICE: sacudida, partículas, carteles, cámara lenta, destello ---------- */
+const FX = { shake: 0, slow: 0, slowK: 1, flash: 0, flashC: '46,229,102', pops: [], parts: [] };
+const fx = {
+  reset() { FX.shake = 0; FX.slow = 0; FX.slowK = 1; FX.flash = 0; FX.pops = []; FX.parts = []; },
+  shake(a) { if (!reduce) FX.shake = Math.max(FX.shake, a); },
+  slow(d, k = .35) { if (!reduce) { FX.slow = d; FX.slowK = k; } },
+  flash(a = .22, col = '46,229,102') { FX.flash = Math.max(FX.flash, reduce ? a * .5 : a); FX.flashC = col; },
+  // texto que salta (x, y en fracción de pantalla)
+  pop(t, o = {}) { FX.pops = FX.pops.filter(p => p.y !== (o.y ?? .36)); FX.pops.push({ t, sub: o.sub || '', x: o.x ?? .5, y: o.y ?? .36, c: o.c || C.hi, s: o.s || 1, l: 0, L: o.L || .95 }); },
+  // partículas en px de canvas
+  burst(x, y, n, o = {}) {
+    if (reduce) n = Math.ceil(n / 4);
+    const sp = o.sp || 220, cols = o.c || [C.hi, C.green, C.paper];
+    for (let i = 0; i < n; i++) {
+      const a = (o.a ?? -Math.PI / 2) + (Math.random() - .5) * (o.spread ?? TAU), v = sp * (.35 + Math.random() * .8);
+      FX.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: o.g ?? 520, l: 0, L: (o.L || .7) * (.6 + Math.random() * .6), c: cols[i % cols.length], r: (o.r || 3.2) * (.6 + Math.random() * .8), sq: !!o.sq, rot: Math.random() * 6 });
+    }
+  }
+};
+function fxStep(dt) {
+  FX.shake = Math.max(0, FX.shake - dt * 30); if (FX.slow > 0) FX.slow -= dt; FX.flash = Math.max(0, FX.flash - dt * 1.4);
+  for (const p of FX.parts) { p.l += dt; p.vy += p.g * dt; p.vx *= 1 - dt * 1.5; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += dt * 8; }
+  FX.parts = FX.parts.filter(p => p.l < p.L);
+  for (const p of FX.pops) p.l += dt; FX.pops = FX.pops.filter(p => p.l < p.L);
+}
+function fxDraw(c, W, H) {
+  for (const p of FX.parts) {
+    c.globalAlpha = Math.max(0, 1 - p.l / p.L); c.fillStyle = p.c;
+    if (p.sq) { c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillRect(-p.r, -p.r * .5, p.r * 2, p.r); c.restore(); }
+    else { c.beginPath(); c.arc(p.x, p.y, p.r, 0, TAU); c.fill(); }
+  }
+  c.globalAlpha = 1;
+  if (FX.flash > 0) { const g = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .2, W / 2, H / 2, Math.max(W, H) * .75); g.addColorStop(0, `rgba(${FX.flashC},0)`); g.addColorStop(1, `rgba(${FX.flashC},${FX.flash})`); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+  for (const p of FX.pops) {
+    const k = p.l / p.L, e = k < .16 ? k / .16 : 1, sc = reduce ? 1 : (k < .16 ? 1 + 1.7 * Math.pow(e - 1, 3) + .7 * Math.pow(e - 1, 2) : 1);
+    const a = k > .7 ? 1 - (k - .7) / .3 : 1, size = Math.min(W * .13, 58) * p.s, x = W * p.x, y = H * p.y - (reduce ? 0 : k * 18);
+    c.save(); c.globalAlpha = a; c.translate(x, y); c.scale(sc, sc); c.rotate(reduce ? 0 : -.04);
+    c.font = `800 ${size}px ${FD}`; try { c.fontStretch = 'condensed'; } catch (e) {} c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.lineJoin = 'round'; c.lineWidth = size * .16; c.strokeStyle = 'rgba(11,12,11,.9)'; c.strokeText(p.t, 0, 0); c.fillStyle = p.c; c.fillText(p.t, 0, 0);
+    if (p.sub) { c.font = `700 ${Math.max(11, size * .28)}px ${FM}`; try { c.fontStretch = 'normal'; } catch (e) {} c.lineWidth = 5; c.strokeText(p.sub, 0, size * .62); c.fillStyle = '#fff'; c.fillText(p.sub, 0, size * .62); }
+    c.restore();
+  }
+}
+
 /* =============================================================
    JUEGOS: cada uno devuelve {status,update,draw,press,release,tap,hud,controls,state}
    ============================================================= */
 
-/* ---------- RUNNING: apretar rápido para correr, saltar vallas ---------- */
+/* ---------- RUNNING: correr a ritmo, saltar en el momento justo, ganarle al rival ---------- */
 function makeRun(o = {}) {
-  o = Object.assign({ goal: 100, limit: 20, hurdles: [16, 30, 44, 58, 72, 86] }, o);
-  const g = { id: 'run', status: 'play', t: 0, d: 0, v: 0, y: 0, vy: 0, stum: 0, ph: 0, flash: 0, why: '' };
-  const hs = o.hurdles.map(x => ({ x, hit: false, rot: 0 }));
-  const VMAX = 10.5, GRAV = 26, JUMP = 7.4;
+  o = Object.assign({ goal: 100, limit: 21, hurdles: [15, 27, 38, 49, 60, 71, 81, 91], rival: 18.6 }, o);
+  const g = { id: 'run', post: true, status: 'play', t: 0, d: 0, v: 0, y: 0, vy: 0, stum: 0, ph: 0, flash: 0, why: '', combo: 0, best: 0, boost: 0, rd: 0, rph: 0, passed: false, G: null, step: 0 };
+  const hs = o.hurdles.map(x => ({ x, hit: false, rot: 0, done: false, q: '' }));
+  const VMAX = 10.5, GRAV = 26, JUMP = 7.4, AP = JUMP / GRAV, rv = o.goal / o.rival;
+  const ideal = () => Math.max(1.3, g.v * AP + .15);
   g.controls = [{ a: 'a', label: 'Correr', key: 'Espacio', main: true }, { a: 'up', label: 'Saltar', key: '↑' }];
-  g.help = { kb: [['Espacio', 'Apretá rápido para correr'], ['↑ / W', 'Saltá las vallas']], touch: [['Correr', 'Tocá rápido para acelerar'], ['Saltar', 'Pasá las vallas sin tirarlas']], goal: `${o.goal} metros con vallas en menos de ${o.limit} segundos.` };
+  g.help = {
+    kb: [['Espacio', 'Apretá seguido para correr'], ['↑ / W', 'Saltá cuando entrás en la franja verde']],
+    touch: [['Correr', 'Tocá seguido para acelerar'], ['Saltar', 'Saltá cuando entrás en la franja verde']],
+    goal: `${o.goal} m con vallas en menos de ${o.limit} s.`,
+    tip: 'Saltar justo en la franja verde da “¡Perfecto!” y un turbo. Encadená perfectos y pasá al rival.'
+  };
+  const fxAt = (m, yy) => g.G ? [g.G.px + (m - g.d) * g.G.ppm, g.G.gy - yy * g.G.ppm] : [0, 0];
   g.press = a => {
     if (g.status !== 'play') return;
-    if (a === 'a' && g.stum <= 0) g.v = Math.min(VMAX, g.v + 1.05);
-    if (a === 'up' && g.y <= 0 && g.vy <= 0) g.vy = JUMP;
+    if (a === 'a' && g.stum <= 0) g.v = Math.min(VMAX + g.boost * 2.2, g.v + 1.05);
+    if (a === 'up' && g.y <= 0 && g.vy <= 0) {
+      g.vy = JUMP;
+      const nx = hs.find(h => !h.hit && !h.done && h.x > g.d);
+      if (nx && nx.x - g.d < 6) { const e = Math.abs((nx.x - g.d) - ideal()); nx.q = e < .6 ? 'p' : 'g'; }
+    }
   };
   g.tap = () => g.press('a');
   g.update = dt => {
-    g.t += dt; g.v -= g.v * .55 * dt; if (g.stum > 0) g.stum -= dt;
+    const play = g.status === 'play';
+    if (play) g.t += dt;
+    g.v -= g.v * (play ? .55 : 1.6) * dt; if (g.stum > 0) g.stum -= dt; g.boost = Math.max(0, g.boost - dt * .8);
     g.d += g.v * dt; g.ph += g.v * dt * 1.25 + dt * .6;
-    if (g.y > 0 || g.vy > 0) { g.y += g.vy * dt; g.vy -= GRAV * dt; if (g.y <= 0) { g.y = 0; g.vy = 0; } }
+    if (g.y > 0 || g.vy > 0) { g.y += g.vy * dt; g.vy -= GRAV * dt; if (g.y <= 0) { g.y = 0; g.vy = 0; const [x, y] = fxAt(g.d, 0); fx.burst(x, y, 8, { c: ['rgba(255,255,255,.5)', '#c9a090'], sp: 120, a: -Math.PI / 2, spread: 2.4, g: 300, L: .45, r: 2.4 }); } }
+    // polvito al pisar
+    if (g.y === 0 && g.v > 6) { const s = Math.floor(g.ph / Math.PI); if (s !== g.step) { g.step = s; const [x, y] = fxAt(g.d - .2, 0); fx.burst(x, y, 2, { c: ['rgba(255,255,255,.35)'], sp: 60, a: -2.6, spread: .8, g: 120, L: .35, r: 2 }); } }
+    // rival (acelera los primeros 1.5 s, después ritmo parejo; salta solo)
+    if (play || g.rd < o.goal + 6) { g.rd += rv * Math.min(1, g.t / 1.5) * (play ? 1 : .6) * dt; g.rph += rv * dt * 1.25; }
     for (const h of hs) {
       if (h.hit) { h.rot = Math.min(Math.PI / 2, h.rot + dt * 8); continue; }
-      if (Math.abs(g.d - h.x) < .32 && g.y < .78) { h.hit = true; g.stum = .55; g.v *= .2; g.flash = .4; }
+      if (h.done || !play) continue;
+      if (Math.abs(g.d - h.x) < .32 && g.y < .78) {
+        h.hit = true; g.stum = .55; g.v *= .2; g.flash = .4; g.combo = 0;
+        const [x, y] = fxAt(h.x, .6);
+        fx.shake(10); fx.burst(x, y, 14, { c: [C.paper, '#cfd2cf', C.green], sp: 260, sq: true, L: .8 }); fx.pop('¡UPS!', { c: '#ff8a6b', s: .8 });
+      } else if (g.d > h.x + .35) {
+        h.done = true; const [x, y] = fxAt(h.x, 1);
+        if (h.q === 'p') {
+          g.combo++; g.best = Math.max(g.best, g.combo); g.boost = 1; g.v = Math.min(VMAX + 2.2, g.v + 1.6);
+          fx.pop('¡PERFECTO!', { sub: g.combo > 1 ? `COMBO x${g.combo} · TURBO` : 'TURBO', s: .9 }); fx.flash(.14);
+          fx.burst(x, y, 18, { sp: 240, L: .7 });
+        } else { g.combo = 0; fx.pop('BIEN', { c: C.paper, s: .6 }); fx.burst(x, y, 6, { sp: 140, L: .5 }); }
+      }
     }
     if (g.flash > 0) g.flash -= dt;
-    if (g.d >= o.goal) { g.d = o.goal; g.status = 'win'; }
-    else if (g.t >= o.limit) { g.status = 'lose'; g.why = 'Se terminó el tiempo antes de la meta.'; }
+    if (play && g.t > 2 && !g.passed && g.d > g.rd + .5) { g.passed = true; fx.pop('¡PASASTE AL RIVAL!', { s: .62, y: .5, c: C.paper }); }
+    if (play && g.d >= o.goal) {
+      g.status = 'win'; fx.slow(.9, .3); fx.flash(.3); fx.shake(4);
+      const [x, y] = fxAt(g.d, 1.2); fx.burst(x, y, 40, { sp: 380, sq: true, L: 1.1 });
+      fx.pop('¡META!', { sub: `${g.t.toFixed(2)} s${g.rd < o.goal ? ' · le ganaste al rival' : ''}`, s: 1.1 });
+    } else if (play && g.t >= o.limit) { g.status = 'lose'; g.why = 'Se terminó el tiempo antes de la meta.'; }
   };
-  g.hud = () => ({ l: `${Math.floor(g.d)} / ${o.goal} m`, r: fmt(o.limit - g.t), p: g.d / o.goal, warn: o.limit - g.t < 4 });
-  g.state = () => { const nx = hs.find(h => !h.hit && h.x > g.d); return { d: g.d, v: g.v, y: g.y, next: nx ? nx.x - g.d : 99 }; };
+  g.hud = () => ({ l: `${Math.min(o.goal, Math.floor(g.d))} / ${o.goal} m`, r: fmt(o.limit - g.t), p: g.d / o.goal, warn: o.limit - g.t < 4 });
+  g.state = () => { const nx = hs.find(h => !h.hit && !h.done && h.x > g.d); return { d: g.d, v: g.v, y: g.y, next: nx ? nx.x - g.d : 99, ideal: ideal(), combo: g.combo, rd: g.rd }; };
   g.draw = (c, W, H, T) => {
     const ppm = Math.min(W / 11, H / 4.6), gy = H * .74, px = W * .28;
+    g.G = { px, gy, ppm };
     const sx = x => px + (x - g.d) * ppm;
     const bg = c.createLinearGradient(0, 0, 0, gy); bg.addColorStop(0, '#0d0f0e'); bg.addColorStop(1, '#1a1e1c');
     c.fillStyle = bg; c.fillRect(0, 0, W, gy);
@@ -193,6 +271,18 @@ function makeRun(o = {}) {
       drawBall(c, fx - aw * .62, gy - ah - ppm * .17, ppm * .27, 0, false);
       text(c, 'META', fx + aw * .2, gy - ah - ppm * .17, ppm * .36, '#fff');
     }
+    // franja de salto ideal para la próxima valla
+    const nh = hs.find(h => !h.hit && !h.done && h.x > g.d);
+    if (nh && g.status === 'play') {
+      const c0 = nh.x - ideal(), x1 = sx(c0 - .6), x2 = sx(c0 + .6), near = clamp(1 - (nh.x - g.d - 3) / 9, 0, 1);
+      if (near > 0) { c.fillStyle = `rgba(46,229,102,${.1 + .22 * near})`; c.fillRect(x1, gy - ppm * .03, x2 - x1, ppm * .32); c.fillStyle = `rgba(46,229,102,${.5 * near})`; c.fillRect(x1, gy - ppm * .03, 3, ppm * .32); c.fillRect(x2 - 3, gy - ppm * .03, 3, ppm * .32); }
+    }
+    // rival (carril de atrás, semitransparente)
+    { const rx = sx(g.rd), rg = gy - ppm * 1.55; if (rx > -60 && rx < W + 60) {
+      c.save(); c.globalAlpha = .5; const hz = hs.find(h => Math.abs(h.x - g.rd) < 1.4), ry = hz ? Math.max(0, 1 - Math.abs(hz.x - g.rd) / 1.4) * .85 : 0;
+      drawRunner(c, rx, rg - ry * ppm * .75, ppm * 1.35, g.rph, { air: ry > .1 ? 1 : 0, lean: .2 }); c.restore();
+      c.font = `700 ${Math.max(9, ppm * .2)}px ${FM}`; const tw = c.measureText('RIVAL').width + 12; rr(c, rx - tw / 2, rg - ppm * 1.75, tw, ppm * .32, ppm * .16); c.fillStyle = 'rgba(11,12,11,.7)'; c.fill(); text(c, 'RIVAL', rx, rg - ppm * 1.59, Math.max(9, ppm * .2), 'rgba(255,255,255,.75)', 'center', FM, 700);
+    } }
     // vallas
     for (const h of hs) {
       const x = sx(h.x); if (x < -80 || x > W + 80) continue;
@@ -217,82 +307,145 @@ function makeRun(o = {}) {
   return g;
 }
 
-/* ---------- CICLISMO: cambiar de carril, esquivar pozos y conos ---------- */
+/* ---------- CICLISMO: ruta con curvas, obstáculos variados, monedas y turbo ---------- */
 function makeBike(o = {}) {
-  o = Object.assign({ goal: 300, lives: 3, v0: 12, v1: 18 }, o);
-  const g = { id: 'bike', status: 'play', t: 0, d: 0, lane: 1, x: 1, hits: 0, inv: 0, slow: 1, flash: 0, why: '', tilt: 0 };
-  const obs = [], kind = () => Math.random() < .5 ? 'cone' : 'hole';
-  let nd = 26;
-  while (nd < o.goal - 14) {
-    const a = Math.floor(Math.random() * 3);
-    obs.push({ d: nd, lane: a, k: kind(), hit: false, s: Math.random() });
-    if (Math.random() < .42) { const b = (a + 1 + Math.floor(Math.random() * 2)) % 3; obs.push({ d: nd + (Math.random() < .5 ? 0 : 2.5), lane: b, k: kind(), hit: false, s: Math.random() }); }
-    nd += 15 + Math.random() * 7;
+  o = Object.assign({ goal: 300, lives: 3, v0: 12, v1: 19 }, o);
+  const g = { id: 'bike', post: true, status: 'play', t: 0, d: 0, lane: 1, x: 1, hits: 0, inv: 0, slow: 1, turbo: 0, wet: 0, flash: 0, why: '', tilt: 0, coins: 0, streak: 0, G: null };
+  const obs = [], HAZ = { cone: 1, hole: 1, bar: 1 };
+  const add = (d, lane, k, extra = {}) => obs.push(Object.assign({ d, lane, k, hit: false, s: Math.random() }, extra));
+  let nd = 24, n = 0;
+  while (nd < o.goal - 16) {
+    const r = Math.random(), a = Math.floor(Math.random() * 3), others = [0, 1, 2].filter(l => l !== a);
+    if (n % 5 === 3 || (r < .2 && n > 2)) {            // obra: valla que tapa dos carriles, queda un hueco con monedas
+      const gap = Math.floor(Math.random() * 3), bl = [0, 1, 2].filter(l => l !== gap);
+      bl.forEach((l, i) => add(nd, l, 'bar', { first: i === 0, pair: bl }));
+      for (let i = 0; i < 3; i++) add(nd - 3 + i * 3, gap, 'coin');
+    } else if (r < .42) {                               // dos obstáculos y moneda en el hueco
+      const k = () => Math.random() < .5 ? 'cone' : 'hole';
+      add(nd, others[0], k()); add(nd + (Math.random() < .5 ? 0 : 2.5), others[1], k()); add(nd + 1, a, 'coin');
+    } else if (r < .62) {                               // charco (frena, no quita vida) + cono
+      add(nd, a, 'puddle'); add(nd + 6, others[Math.floor(Math.random() * 2)], 'cone');
+    } else if (r < .8) {                                // turbo
+      add(nd, a, 'turbo'); add(nd + 4, others[0], Math.random() < .5 ? 'cone' : 'hole');
+    } else {                                            // fila de monedas que cambia de carril
+      const b = others[Math.floor(Math.random() * 2)];
+      for (let i = 0; i < 4; i++) add(nd - 4 + i * 2.6, i < 2 ? a : b, 'coin');
+      add(nd + 7, a, 'hole');
+    }
+    nd += 15 + Math.random() * 6; n++;
   }
+  const curve = d => Math.sin(d * .021) * .55 + Math.sin(d * .047 + 1.3) * .25;   // en anchos de carril
   g.controls = [{ a: 'left', label: '◀  Izquierda', key: '← / A' }, { a: 'right', label: 'Derecha  ▶', key: '→ / D' }];
-  g.help = { kb: [['← / A', 'Carril izquierdo'], ['→ / D', 'Carril derecho']], touch: [['◀ ▶', 'Cambiá de carril (o tocá un costado de la ruta)']], goal: `Llegá a la meta de ${o.goal} m esquivando pozos y conos. Tenés ${o.lives} vidas.` };
+  g.help = {
+    kb: [['← / A', 'Carril izquierdo'], ['→ / D', 'Carril derecho']],
+    touch: [['◀ ▶', 'Cambiá de carril (o tocá un costado de la ruta)']],
+    goal: `Llegá a la meta de ${o.goal} m. Conos, pozos y vallas de obra te quitan una de tus ${o.lives} vidas.`,
+    tip: 'Las flechas verdes dan turbo, los charcos frenan y las monedas Cozy suman combo. La ruta se acelera.'
+  };
   g.press = a => { if (g.status !== 'play') return; if (a === 'left') g.lane = Math.max(0, g.lane - 1); if (a === 'right') g.lane = Math.min(2, g.lane + 1); };
   g.tap = (x, y, W) => g.press(x < W / 2 ? 'left' : 'right');
+  const at = () => g.G ? [g.G.bx, g.G.py] : [0, 0];
   g.update = dt => {
-    g.t += dt;
-    const v = lerp(o.v0, o.v1, Math.min(1, g.d / o.goal)) * g.slow;
-    g.slow = Math.min(1, g.slow + dt * .6);
-    g.d += v * dt;
+    const play = g.status === 'play';
+    if (play) g.t += dt;
+    const base = lerp(o.v0, o.v1, Math.min(1, g.d / o.goal));
+    const v = base * g.slow * (1 + g.turbo * .45) * (play ? 1 : .55);
+    g.slow = Math.min(1, g.slow + dt * .6); g.turbo = Math.max(0, g.turbo - dt * .6); g.wet = Math.max(0, g.wet - dt);
+    g.d += v * dt; g.v = v;
     const px = g.x; g.x += (g.lane - g.x) * Math.min(1, dt * 14); g.tilt = (g.x - px) / Math.max(dt, .001) * .05;
     if (g.inv > 0) g.inv -= dt; if (g.flash > 0) g.flash -= dt;
+    if (!play) return;
     const cl = Math.round(g.x);
     for (const ob of obs) {
-      if (ob.hit || g.inv > 0 || g.status !== 'play') continue;
-      if (ob.lane === cl && Math.abs(g.x - cl) < .35 && ob.d - g.d < .9 && ob.d - g.d > -.5) {
-        ob.hit = true; g.hits++; g.inv = 1; g.slow = .45; g.flash = .4;
+      if (ob.hit || ob.lane !== cl || Math.abs(g.x - cl) > .4) continue;
+      const dd = ob.d - g.d; if (dd > .9 || dd < -.6) continue;
+      const [x, y] = at();
+      if (ob.k === 'coin') {
+        ob.hit = true; g.coins++; g.streak++;
+        fx.burst(x, y - 20, 8, { c: [C.hi, '#fff'], sp: 160, L: .45 });
+        if (g.streak % 3 === 0) fx.pop(`COMBO x${g.streak}`, { s: .55, y: .44 });
+      } else if (ob.k === 'turbo') {
+        ob.hit = true; g.turbo = 1; fx.pop('¡TURBO!', { s: .8 }); fx.flash(.16); fx.shake(3);
+      } else if (ob.k === 'puddle') {
+        ob.hit = true; g.slow = Math.min(g.slow, .6); g.wet = .8;
+        fx.burst(x, y, 16, { c: ['rgba(160,200,230,.8)', 'rgba(255,255,255,.7)'], sp: 220, L: .55, r: 2.6 }); fx.pop('¡SPLASH!', { c: '#9fd3f0', s: .6, y: .44 });
+      } else if (g.inv <= 0) {
+        ob.hit = true; g.hits++; g.inv = 1.1; g.slow = .45; g.flash = .4; g.streak = 0; g.turbo = 0;
+        fx.shake(12); fx.burst(x, y - 10, 18, { c: ob.k === 'cone' ? ['#ff7a1a', '#fff'] : ob.k === 'bar' ? ['#f4f3ee', '#ff5a3c'] : ['#555', '#888'], sp: 280, sq: true, L: .8 });
+        fx.pop(g.hits >= o.lives ? '¡AL PISO!' : '¡AY!', { c: '#ff8a6b', s: .8 });
         if (g.hits >= o.lives) { g.status = 'lose'; g.why = `Te caíste ${o.lives} veces.`; }
       }
     }
-    if (g.status === 'play' && g.d >= o.goal) { g.d = o.goal; g.status = 'win'; }
+    if (g.status === 'play' && g.d >= o.goal) {
+      g.status = 'win'; fx.slow(.8, .3); fx.flash(.3); fx.burst(g.G ? g.G.bx : 0, g.G ? g.G.py - 40 : 0, 40, { sp: 380, sq: true, L: 1.1 });
+      fx.pop('¡META!', { sub: `${g.coins} monedas Cozy`, s: 1.1 });
+    }
   };
-  g.hud = () => ({ l: `${Math.floor(g.d)} / ${o.goal} m`, r: 'Vidas ' + '●'.repeat(Math.max(0, o.lives - g.hits)) + '○'.repeat(Math.min(o.lives, g.hits)), p: g.d / o.goal, rlabel: 1 });
-  g.state = () => ({ d: g.d, lane: g.lane, x: g.x, obs: obs.filter(b => !b.hit && b.d > g.d - 1 && b.d < g.d + 16).map(b => ({ dd: b.d - g.d, lane: b.lane })) });
+  g.hud = () => ({ l: `${Math.min(o.goal, Math.floor(g.d))} / ${o.goal} m`, r: 'Vidas ' + '●'.repeat(Math.max(0, o.lives - g.hits)) + '○'.repeat(Math.min(o.lives, g.hits)), p: g.d / o.goal, rlabel: 1 });
+  g.state = () => ({ d: g.d, lane: g.lane, x: g.x, obs: obs.filter(b => !b.hit && b.d > g.d - 1 && b.d < g.d + 18).map(b => ({ dd: b.d - g.d, lane: b.lane, k: b.k, haz: !!HAZ[b.k] })) });
   g.draw = (c, W, H, T) => {
-    const py = H * .8, ppm = H * .8 / 22, roadW = Math.min(W * .84, 420), lw = roadW / 3, x0 = (W - roadW) / 2;
-    const sy = d => py - (d - g.d) * ppm;
+    const py = H * .8, ppm = H * .8 / 22, roadW = Math.min(W * .78, 400), lw = roadW / 3, cx = W / 2;
+    const dAt = y => g.d + (py - y) / ppm, off = y => (curve(dAt(y)) - curve(g.d)) * lw;
+    const xL = y => cx - roadW / 2 + off(y);
     c.fillStyle = '#0f1d13'; c.fillRect(0, 0, W, H);
-    const st = 4 * ppm, so = (g.d * ppm) % (st * 2);
-    c.fillStyle = '#132518'; for (let y = -st * 2 + so; y < H; y += st * 2) c.fillRect(0, y, W, st);
-    c.fillStyle = '#2a2f2c'; c.fillRect(x0 - 10, 0, roadW + 20, H);
-    c.fillStyle = '#1f2321'; c.fillRect(x0, 0, roadW, H);
-    for (let i = 0; i < 40; i++) { c.fillStyle = 'rgba(255,255,255,.03)'; c.fillRect(x0 + hash(i * 3.1) * roadW, (i * 53 + g.d * ppm) % H, 2, 2); }
-    c.fillStyle = 'rgba(255,255,255,.75)'; c.fillRect(x0 + 4, 0, 3, H); c.fillRect(x0 + roadW - 7, 0, 3, H);
-    const dl = 3 * ppm, doff = (g.d * ppm) % (dl * 2);
-    c.fillStyle = 'rgba(255,255,255,.45)';
-    for (let k = 1; k < 3; k++) for (let y = -dl * 2 + doff; y < H; y += dl * 2) c.fillRect(x0 + lw * k - 1.5, y, 3, dl);
+    const step = 6;
+    for (let y = 0; y < H; y += step) {
+      const d = dAt(y), x0 = xL(y);
+      c.fillStyle = Math.floor(d / 4) % 2 ? '#132518' : '#0f1d13'; c.fillRect(0, y, W, step + 1);
+      c.fillStyle = Math.floor(d / 2) % 2 ? '#c8ccc8' : '#c0392b'; c.fillRect(x0 - 12, y, 8, step + 1); c.fillRect(x0 + roadW + 4, y, 8, step + 1);   // pianito
+      c.fillStyle = '#1f2321'; c.fillRect(x0 - 4, y, roadW + 8, step + 1);
+      if (Math.floor(d / 3) % 2) { c.fillStyle = 'rgba(255,255,255,.42)'; c.fillRect(x0 + lw - 1.5, y, 3, step + 1); c.fillRect(x0 + lw * 2 - 1.5, y, 3, step + 1); }
+    }
+    // árboles al costado (parallax)
+    for (let i = 0; i < 14; i++) {
+      const dd = Math.floor(g.d / 9) * 9 + i * 9 - 18, y = py - (dd - g.d) * ppm; if (y < -40 || y > H + 40) continue;
+      for (const sd of [-1, 1]) { const h = hash(dd * 3.7 + sd); if (h < .35) continue; const x = sd < 0 ? xL(y) - 30 - h * 40 : xL(y) + roadW + 30 + h * 40, r = 12 + h * 12; c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.arc(x + 5, y + 6, r, 0, TAU); c.fill(); c.fillStyle = '#1b4a28'; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); c.fillStyle = '#23603a'; c.beginPath(); c.arc(x - r * .25, y - r * .25, r * .55, 0, TAU); c.fill(); }
+    }
+    const sy = d => py - (d - g.d) * ppm, lx = (lane, y) => xL(y) + lw * (lane + .5);
     // meta con el logo
     const fy = sy(o.goal);
     if (fy > -120 && fy < H + 40) {
-      const sq = roadW / 18;
+      const x0 = xL(fy), sq = roadW / 18;
       for (let i = 0; i < 18; i++) for (let j = 0; j < 2; j++) { c.fillStyle = (i + j) % 2 ? '#111' : '#eee'; c.fillRect(x0 + i * sq, fy + j * sq, sq, sq); }
-      c.fillStyle = C.ink; rr(c, x0 - 16, fy - lw * .55, roadW + 32, lw * .42, 8); c.fill();
-      c.strokeStyle = C.green; c.lineWidth = 2; c.stroke();
-      drawBall(c, W / 2, fy - lw * .34, lw * .26, 0, false);
+      c.fillStyle = C.ink; rr(c, x0 - 16, fy - lw * .55, roadW + 32, lw * .42, 8); c.fill(); c.strokeStyle = C.green; c.lineWidth = 2; c.stroke();
+      drawBall(c, x0 + roadW / 2, fy - lw * .34, lw * .26, 0, false);
       text(c, 'META', x0 + lw * .45, fy - lw * .34, lw * .2, '#fff'); text(c, 'COZY', x0 + roadW - lw * .45, fy - lw * .34, lw * .2, C.hi);
     }
     for (const ob of obs) {
-      const y = sy(ob.d); if (y < -40 || y > H + 40) continue;
-      const x = x0 + lw * (ob.lane + .5);
+      const y = sy(ob.d); if (y < -50 || y > H + 50) continue;
+      if (ob.hit && ob.k !== 'puddle' && ob.k !== 'turbo') continue;
+      const x = lx(ob.lane, y);
       if (ob.k === 'hole') {
         c.fillStyle = '#0a0c0b'; c.beginPath(); c.ellipse(x, y, lw * .24, lw * .14, ob.s - .5, 0, TAU); c.fill();
         c.strokeStyle = 'rgba(255,255,255,.14)'; c.lineWidth = 2; c.beginPath(); c.ellipse(x, y, lw * .26, lw * .16, ob.s - .5, Math.PI * .1, Math.PI * 1.1); c.stroke();
-        c.fillStyle = 'rgba(255,255,255,.05)'; c.beginPath(); c.ellipse(x - lw * .05, y + lw * .03, lw * .1, lw * .05, ob.s, 0, TAU); c.fill();
-      } else {
+      } else if (ob.k === 'cone') {
         const r = lw * .13;
         c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(x + r * .4, y + r * .5, r * 1.3, r * .8, 0, 0, TAU); c.fill();
         c.fillStyle = '#d65d1a'; rr(c, x - r * 1.15, y - r * 1.15, r * 2.3, r * 2.3, r * .4); c.fill();
         c.fillStyle = '#ff7a1a'; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
         c.strokeStyle = '#fff'; c.lineWidth = r * .32; c.beginPath(); c.arc(x, y, r * .6, 0, TAU); c.stroke();
-        c.fillStyle = '#ffb27a'; c.beginPath(); c.arc(x, y, r * .25, 0, TAU); c.fill();
+      } else if (ob.k === 'bar' && ob.first) {
+        const xa = lx(Math.min(...ob.pair), y) - lw * .44, xb = lx(Math.max(...ob.pair), y) + lw * .44, h = lw * .2;
+        c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(xa + 4, y - h / 2 + 6, xb - xa, h);
+        c.save(); rr(c, xa, y - h / 2, xb - xa, h, 4); c.clip(); c.fillStyle = '#f4f3ee'; c.fillRect(xa, y - h / 2, xb - xa, h);
+        c.fillStyle = '#e0412b'; for (let k = -2; k < (xb - xa) / (h * 1.2) + 2; k++) { c.beginPath(); const sx0 = xa + k * h * 1.2; c.moveTo(sx0, y + h / 2); c.lineTo(sx0 + h * .6, y + h / 2); c.lineTo(sx0 + h * 1.2, y - h / 2); c.lineTo(sx0 + h * .6, y - h / 2); c.fill(); }
+        c.restore(); text(c, 'OBRA', (xa + xb) / 2, y, h * .62, C.ink, 'center', FM, 700);
+      } else if (ob.k === 'puddle') {
+        c.fillStyle = 'rgba(110,170,210,.32)'; c.beginPath(); c.ellipse(x, y, lw * .34, lw * .2, ob.s, 0, TAU); c.fill();
+        c.strokeStyle = 'rgba(200,230,255,.35)'; c.lineWidth = 2; c.beginPath(); c.ellipse(x - lw * .06, y - lw * .03, lw * .16, lw * .07, ob.s, 0, TAU); c.stroke();
+      } else if (ob.k === 'turbo') {
+        const a = ob.hit ? .25 : .9 + (reduce ? 0 : Math.sin(T * 10) * .1);
+        for (let k = 0; k < 3; k++) { c.fillStyle = `rgba(46,229,102,${a * (1 - k * .25)})`; const yy = y - k * lw * .16; c.beginPath(); c.moveTo(x - lw * .25, yy + lw * .1); c.lineTo(x, yy - lw * .06); c.lineTo(x + lw * .25, yy + lw * .1); c.lineTo(x + lw * .25, yy + lw * .02); c.lineTo(x, yy - lw * .14); c.lineTo(x - lw * .25, yy + lw * .02); c.fill(); }
+      } else if (ob.k === 'coin') {
+        const r = lw * .11, sp = reduce ? 1 : Math.abs(Math.cos(T * 4 + ob.d));
+        c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(x + 3, y + 5, r, r * .5, 0, 0, TAU); c.fill();
+        c.save(); c.translate(x, y); c.scale(Math.max(.25, sp), 1); c.fillStyle = C.green; c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill(); c.strokeStyle = C.hi; c.lineWidth = 2; c.stroke(); drawZ(c, 0, 0, r * 1.3, '#fff'); c.restore();
       }
     }
     // ciclista (vista de arriba)
-    const bx = x0 + lw * (g.x + .5), s = Math.min(lw * .5, H * .12);
+    const bx = lx(0, py) - lw * .5 + lw * (g.x + .5), s = Math.min(lw * .5, H * .12);
+    g.G = { bx, py };
+    if (g.turbo > 0 && !reduce) { c.strokeStyle = `rgba(46,229,102,${.5 * g.turbo})`; c.lineWidth = 2; for (let i = 0; i < 5; i++) { const xx = bx + (i - 2) * s * .14, l = s * (1 + hash(i + Math.floor(T * 14)) * 1.4); line(c, xx, py + s * .9, xx, py + s * .9 + l); } }
     if (!(g.inv > 0 && Math.floor(T * 12) % 2)) {
       c.save(); c.translate(bx, py); c.rotate(clamp(g.tilt, -.35, .35));
       c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(s * .08, s * .12, s * .3, s * .95, 0, 0, TAU); c.fill();
@@ -308,67 +461,89 @@ function makeBike(o = {}) {
       c.restore();
     }
     if (g.flash > 0) { c.fillStyle = `rgba(255,80,60,${g.flash * .3})`; c.fillRect(0, 0, W, H); }
+    // contador de monedas
+    rr(c, 12, 48, 64, 26, 13); c.fillStyle = 'rgba(11,12,11,.74)'; c.fill();
+    c.fillStyle = C.green; c.beginPath(); c.arc(26, 61, 8, 0, TAU); c.fill(); drawZ(c, 26, 61, 10, '#fff');
+    text(c, String(g.coins), 52, 61.5, 12, '#fff', 'center', FM, 700);
   };
   return g;
 }
 
-/* ---------- FÚTBOL: penales contra un arquero que se mueve ---------- */
+/* ---------- FÚTBOL: penales con mira que va y viene + fuerza (como el footgolf) ---------- */
 function makeFoot() {
   const SHOTS = 5, NEED = 3;
-  const g = { id: 'foot', status: 'play', t: 0, goals: 0, shots: 0, kx: 0, kph: Math.random() * 6, kspd: 1.7, kchg: 1.5, aim: { x: .5, y: .55 }, aimOn: false, sh: null, msg: '', msgT: 0, dive: 0, dd: 0, why: '', log: [] };
-  let G = null; const held = {};
-  g.controls = [{ hint: 'Tocá el arco donde quieras patear' }];
-  g.help = { kb: [['Mouse', 'Apuntá y hacé clic para patear'], ['← → ↑ ↓', 'Mové la mira'], ['Espacio', 'Patear']], touch: [['Tocar', 'Tocá el lugar del arco donde querés patear']], goal: `Hacé ${NEED} goles en ${SHOTS} penales. Pateá lejos del arquero.` };
+  const g = { id: 'foot', post: true, status: 'play', t: 0, goals: 0, shots: 0, ph: 'aim', at: Math.random() * 3, ax: .5, pw: 0, kx: 0, dd: 0, dive: 0, kup: 0, sh: null, why: '', log: [], streak: 0, bulge: 0 };
+  let G = null;
+  g.controls = [{ a: 'a', label: 'Patear', key: 'Espacio', main: true }];
+  g.help = {
+    kb: [['Espacio / clic', '1º: fijá la dirección (la mira va y viene)'], ['Espacio / clic', '2º: fijá la altura con la barra']],
+    touch: [['Patear', '1º toque: dirección · 2º toque: altura']],
+    goal: `Hacé ${NEED} goles en ${SHOTS} penales.`,
+    tip: 'Barra verde = tiro alto. Si te pasás, va a la tribuna. Arriba y al ángulo, el arquero no llega.'
+  };
   const geo = (W, H) => {
     const gw = Math.min(W * .84, H * 1.25, 560), gh = gw * .36, gx = (W - gw) / 2;
     const dist = Math.max(gw * .62, Math.min(H * .42, gw * 1.1)), gy = Math.max(H * .13, 52, (H - gh - dist) * .42), gl = gy + gh;
     const spot = [W / 2, Math.min(H - 40, gl + dist)];
     return { gw, gh, gx, gy, gl, spot, br: Math.max(14, gw * .045) };
   };
-  const clampAim = (x, y) => ({ x: clamp(x, .07, .93), y: clamp(y, .14, .88) });
+  const tyOf = p => p > .9 ? -.35 : .92 - p * .88;
   const shoot = () => {
-    if (g.status !== 'play' || g.sh || g.shots >= SHOTS) return;
-    g.sh = { t: 0, T: .6, tx: g.aim.x, ty: g.aim.y, res: null, end: 0 }; g.shots++;
+    const r = Math.random(), side = r < .37 ? -1 : r < .74 ? 1 : 0;
+    g.sh = { t: 0, T: .55, tx: g.ax, ty: tyOf(g.pw), pw: g.pw, side, res: null, end: 0 }; g.shots++; g.ph = 'shot';
   };
-  g.press = a => { if (a === 'a') shoot(); else { held[a] = true; g.aimOn = true; } };
-  g.release = a => { held[a] = false; };
-  g.move = (x, y, W, H, type) => { if (type !== 'mouse' || !G) return; g.aim = clampAim((x - G.gx) / G.gw, (y - G.gy) / G.gh); g.aimOn = true; };
-  g.tap = (x, y) => { if (!G) return; g.aim = clampAim((x - G.gx) / G.gw, (y - G.gy) / G.gh); g.aimOn = true; shoot(); };
+  g.press = a => {
+    if (a !== 'a' || g.status !== 'play' || g.sh) return;
+    if (g.ph === 'aim') { g.ph = 'power'; g.at = 0; } else if (g.ph === 'power') shoot();
+  };
+  g.tap = () => g.press('a');
+  const ballPx = s => G ? [G.gx + s.tx * G.gw, G.gy + Math.max(-.2, s.ty) * G.gh] : [0, 0];
   g.update = dt => {
-    g.t += dt; if (g.msgT > 0) g.msgT -= dt;
-    const m = dt * .9;
-    if (held.left) g.aim.x -= m; if (held.right) g.aim.x += m; if (held.up) g.aim.y -= m * 1.4; if (held.down) g.aim.y += m * 1.4;
-    g.aim = clampAim(g.aim.x, g.aim.y);
+    g.t += dt; g.at += dt; g.bulge = Math.max(0, g.bulge - dt * 1.6);
+    if (g.ph === 'aim') g.ax = .5 + .44 * Math.sin(g.at * 2.1);
+    else if (g.ph === 'power') { const k = (g.at / .7) % 2; g.pw = k < 1 ? k : 2 - k; }
     const s = g.sh;
-    if (!s || s.t < .18) {   // patrulla de lado a lado con ritmo cambiante
-      g.kchg -= dt; if (g.kchg <= 0) { g.kchg = .9 + Math.random() * 1.2; g.kspd = 1.2 + Math.random() * 1.3; }
-      g.kph += dt * g.kspd; g.kx = Math.sin(g.kph) * .34;
-    }
-    if (!s) return;
+    if (!s) { g.kx = Math.sin(g.t * 1.6) * .05; return; }
     s.t += dt;
-    const tx = s.tx - .5;
-    if (s.t > .18 && !s.res) {   // reacción del arquero: velocidad limitada
-      if (!g.dd) g.dd = Math.sign(tx - g.kx) || 1;
-      g.kx += clamp(tx - g.kx, -dt * .55, dt * .55);
-      if (Math.abs(tx - g.kx) < .25) g.dive = Math.min(1, g.dive + dt * 4);
+    if (s.t > .1 && !s.res) {   // el arquero se tira a un lado al azar (no adivina siempre)
+      g.dd = s.side; g.kx += clamp(s.side * .3 - g.kx, -dt * 2.4, dt * 2.4);
+      if (s.side) g.dive = Math.min(1, g.dive + dt * 4.5); else g.kup = Math.min(1, g.kup + dt * 5);
     }
     if (s.t >= s.T && !s.res) {
-      const dist = Math.abs(tx - g.kx), reach = .12 + g.dive * .08;
-      s.res = (dist < reach && !(s.ty < .24 && dist > .07)) ? 'save' : 'goal';
-      if (s.res === 'goal') { g.goals++; g.msg = '¡GOL!'; } else g.msg = 'ATAJÓ';
-      g.log.push(s.res); g.msgT = 1.1;
+      const off = s.tx - .5, [bx, by] = ballPx(s);
+      if (s.ty < -.1) s.res = 'out';
+      else if (Math.abs(off) > .425) s.res = Math.random() < .5 ? 'postin' : 'post';
+      else {
+        const high = s.ty < .32, reach = s.side ? .16 : .17, kc = s.side * .3;
+        const saved = !(high && Math.abs(off) > .32) && Math.abs(off - kc) < reach + (s.pw < .25 ? .1 : 0);
+        s.res = saved ? 'save' : 'goal';
+      }
+      const goal = s.res === 'goal' || s.res === 'postin';
+      g.log.push(goal ? 'goal' : 'miss');
+      if (goal) {
+        g.goals++; g.streak++; g.bulge = 1;
+        const golazo = s.ty < .32 && Math.abs(off) > .3;
+        fx.slow(.55, .3); fx.shake(9); fx.flash(.24);
+        fx.burst(bx, by, 34, { sp: 340, sq: true, L: 1 });
+        fx.pop(s.res === 'postin' ? '¡PALO Y ADENTRO!' : golazo ? '¡GOLAZO!' : '¡GOL!', { sub: golazo && s.res === 'goal' ? 'AL ÁNGULO' : (g.streak > 1 ? `${g.streak} SEGUIDOS` : ''), s: s.res === 'postin' ? .7 : 1.1, y: .55 });
+      } else {
+        g.streak = 0;
+        if (s.res === 'save') { fx.shake(5); fx.burst(bx, by, 12, { c: [C.paper, '#cfd2cf'], sp: 220, L: .6 }); fx.pop('¡ATAJÓ!', { c: C.paper, s: .9, y: .55 }); }
+        else if (s.res === 'post') { fx.shake(11); fx.burst(bx, by, 10, { c: ['#fff'], sp: 260, L: .5 }); fx.pop('¡PALO!', { c: C.paper, s: .9, y: .55 }); }
+        else fx.pop('¡A LA TRIBUNA!', { c: '#ffb27a', s: .75, y: .55 });
+      }
     }
     if (s.res) {
       s.end += dt;
-      if (s.end > 1.1) {
-        g.sh = null; g.dive = 0; g.dd = 0;
-        if (g.goals >= NEED) g.status = 'win';
+      if (s.end > 1.25 && g.status === 'play') {
+        g.sh = null; g.dive = 0; g.kup = 0; g.dd = 0; g.ph = 'aim'; g.at = Math.random() * 3;
+        if (g.goals >= NEED) { g.status = 'win'; fx.flash(.3); fx.pop('¡GANASTE LA SERIE!', { s: .7, y: .42 }); }
         else if (g.goals + (SHOTS - g.shots) < NEED) { g.status = 'lose'; g.why = `Hiciste ${g.goals} de ${NEED} goles.`; }
       }
     }
   };
   g.hud = () => ({ l: `Goles ${g.goals} / ${NEED}`, r: `Penal ${Math.min(SHOTS, g.shots + (g.sh ? 0 : 1))} / ${SHOTS}`, p: g.goals / NEED });
-  g.state = () => ({ kx: g.kx, busy: !!g.sh, G, goals: g.goals, shots: g.shots });
+  g.state = () => ({ ph: g.ph, ax: g.ax, pw: g.pw, busy: !!g.sh, goals: g.goals, shots: g.shots });
   g.draw = (c, W, H, T) => {
     G = geo(W, H); const { gw, gh, gx, gy, gl, spot, br } = G;
     const ab = gy + gh * .45;
@@ -394,7 +569,7 @@ function makeFoot() {
     c.beginPath(); c.moveTo(gx, gl); c.lineTo(gx, gy); c.lineTo(gx + gw, gy); c.lineTo(gx + gw, gl); c.stroke();
     // arquero de frente
     const kh = gh * .82, kx = W / 2 + g.kx * gw;
-    c.save(); c.translate(kx, gl); c.rotate(g.dd * g.dive * 1.0); c.lineCap = 'round';
+    c.save(); c.translate(kx, gl - g.kup * gh * .16); c.rotate(g.dd * g.dive * 1.05); c.lineCap = 'round';
     c.strokeStyle = '#2a302d'; c.lineWidth = kh * .11;
     line(c, -kh * .09, -kh * .45, -kh * .19, -kh * .03); line(c, kh * .09, -kh * .45, kh * .19, -kh * .03);
     c.strokeStyle = C.hi; c.lineWidth = kh * .1; line(c, -kh * .19, -kh * .03, -kh * .27, -kh * .02); line(c, kh * .19, -kh * .03, kh * .27, -kh * .02);
@@ -411,21 +586,35 @@ function makeFoot() {
     let bx = spot[0], by = spot[1], r = br, rot = 0;
     if (g.sh) {
       const s = g.sh, tx = gx + s.tx * gw, ty = gy + s.ty * gh, k = Math.min(1, s.t / s.T), e = 1 - (1 - k) * (1 - k);
-      bx = lerp(spot[0], tx, e); by = lerp(spot[1], ty, e) - Math.sin(k * Math.PI) * gh * .25; r = lerp(br, br * .55, e); rot = k * 9;
-      if (s.res === 'save') { const q = Math.min(1, s.end * 2); bx = tx + (tx < kx ? -1 : 1) * q * gw * .3; by = ty - q * gh * .3 + q * q * gh * .9; }
-      if (s.res === 'goal') by = ty + Math.min(1, s.end * 3) * gh * .1;
+      bx = lerp(spot[0], tx, e); by = lerp(spot[1], ty, e) - Math.sin(k * Math.PI) * gh * .25; r = lerp(br, br * (s.ty < 0 ? .4 : .55), e); rot = k * 9;
+      const q = Math.min(1, s.end * 2);
+      if (s.res === 'save') { bx = tx + (tx < kx ? -1 : 1) * q * gw * .3; by = ty - q * gh * .3 + q * q * gh * .9; }
+      if (s.res === 'post') { bx = tx + Math.sign(s.tx - .5) * q * gw * .25; by = ty + q * gh * .8; }
+      if (s.res === 'out') { by = ty - q * gh * .6; r = br * .4 * (1 - q * .5); }
+      if (s.res === 'goal' || s.res === 'postin') { if (s.res === 'postin') bx = tx - Math.sign(s.tx - .5) * Math.min(1, s.end * 3) * gw * .08; by = ty + Math.min(1, s.end * 3) * gh * .1; }
     }
+    if (g.bulge > 0 && g.sh) { const bgx = gx + g.sh.tx * gw, bgy = gy + Math.max(.1, g.sh.ty) * gh, rg = c.createRadialGradient(bgx, bgy, 0, bgx, bgy, gw * .22); rg.addColorStop(0, `rgba(255,255,255,${.35 * g.bulge})`); rg.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = rg; c.fillRect(gx, gy, gw, gh); }
     drawBall(c, bx, by, r, rot);
-    if (!g.sh && g.aimOn) {
-      const ax = gx + g.aim.x * gw, ay = gy + g.aim.y * gh;
-      c.strokeStyle = C.hi; c.lineWidth = 2; c.beginPath(); c.arc(ax, ay, br * .8, 0, TAU); c.stroke();
+    // mira: en la fase 1 va y viene; en la 2 sube y baja con la fuerza
+    if (!g.sh && g.status === 'play') {
+      const ax = gx + g.ax * gw, ty = g.ph === 'power' ? tyOf(g.pw) : .5, ay = gy + Math.max(-.25, ty) * gh, over = ty < 0;
+      const col = over ? '#ff8a6b' : C.hi;
+      if (g.ph === 'power') { c.strokeStyle = 'rgba(46,229,102,.35)'; c.lineWidth = 2; c.setLineDash([4, 6]); line(c, ax, gy, ax, gl); c.setLineDash([]); }
+      c.strokeStyle = col; c.lineWidth = 2.5; c.beginPath(); c.arc(ax, ay, br * .8, 0, TAU); c.stroke();
       line(c, ax - br * 1.3, ay, ax - br * .45, ay); line(c, ax + br * .45, ay, ax + br * 1.3, ay); line(c, ax, ay - br * 1.3, ax, ay - br * .45); line(c, ax, ay + br * .45, ax, ay + br * 1.3);
+      // barra de fuerza / altura
+      const mh = Math.min(140, (spot[1] - gl) * .7), mx = Math.min(W - 26, spot[0] + gw * .42), my = spot[1] - mh;
+      rr(c, mx - 7, my - 4, 14, mh + 8, 7); c.fillStyle = 'rgba(11,12,11,.8)'; c.fill();
+      c.fillStyle = 'rgba(255,255,255,.12)'; c.fillRect(mx - 4, my, 8, mh);
+      c.fillStyle = 'rgba(46,229,102,.75)'; c.fillRect(mx - 4, my + mh * (1 - .86), 8, mh * .26);
+      c.fillStyle = 'rgba(255,110,80,.75)'; c.fillRect(mx - 4, my, 8, mh * .1);
+      if (g.ph === 'power') { const yy = my + mh * (1 - g.pw); c.fillStyle = '#fff'; rr(c, mx - 10, yy - 3, 20, 6, 3); c.fill(); }
+      text(c, g.ph === 'aim' ? '1 · DIRECCIÓN' : '2 · ALTURA', spot[0], spot[1] + br * 2.2, 11, 'rgba(255,255,255,.7)', 'center', FM, 700);
     }
     for (let i = 0; i < SHOTS; i++) {
       const x = W / 2 + (i - 2) * 18, y = H - 14, res = g.log[i];
-      c.beginPath(); c.arc(x, y, 5, 0, TAU); c.fillStyle = res === 'goal' ? C.hi : res === 'save' ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.14)'; c.fill();
+      c.beginPath(); c.arc(x, y, 5, 0, TAU); c.fillStyle = res === 'goal' ? C.hi : res === 'miss' ? 'rgba(255,255,255,.5)' : 'rgba(255,255,255,.14)'; c.fill();
     }
-    if (g.msgT > 0) { c.globalAlpha = Math.min(1, g.msgT * 3); text(c, g.msg, W / 2, gl + (spot[1] - gl) * .45, Math.min(W * .16, 84), g.msg === 'ATAJÓ' ? C.paper : C.hi); c.globalAlpha = 1; }
   };
   return g;
 }
@@ -439,7 +628,7 @@ function makeGolf() {
   const VMAX = 2 * 1.4 * D / 1.8, ACC = VMAX / 1.8;
   const g = { id: 'golf', status: 'play', t: 0, b: [...tee], v: [0, 0], ph: 'aim', ang: 0, pw: 0, at: 0, strokes: 0, rot: 0, sink: 0, why: '', base: 0 };
   g.controls = [{ a: 'a', label: 'Patear', key: 'Espacio', main: true }];
-  g.help = { kb: [['Espacio / clic', '1º: fijá la dirección'], ['Espacio / clic', '2º: fijá la fuerza']], touch: [['Patear', '1º toque fija la dirección, 2º la fuerza']], goal: `Embocá la pelota en el hoyo en ${MAXS} golpes como máximo.` };
+  g.help = { kb: [['Espacio / clic', '1º: fijá la dirección'], ['Espacio / clic', '2º: fijá la fuerza']], touch: [['Patear', '1º toque fija la dirección, 2º la fuerza']], goal: `Embocá la pelota en el hoyo en ${MAXS} golpes como máximo.`, tip: 'Esperá a que la flecha apunte al hoyo. Ojo con los bunkers (frenan) y los árboles (rebota).' };
   const toHole = () => Math.atan2(hole[1] - g.b[1], hole[0] - g.b[0]);
   g.base = toHole();
   g.press = a => {
@@ -525,30 +714,58 @@ function makeGolf() {
   return g;
 }
 
-/* ---------- AGUAS ABIERTAS: brazadas alternadas hasta la boya ---------- */
+/* ---------- AGUAS ABIERTAS: brazadas con ritmo (zona perfecta), olas para surfear ---------- */
 function makeSwim(o = {}) {
-  o = Object.assign({ goal: 100, limit: 28 }, o);
-  const g = { id: 'swim', status: 'play', t: 0, d: 0, v: 0, last: '', armL: 0, armR: 0, msg: 0, why: '', splash: [] };
-  g.controls = [{ a: 'left', label: 'Brazada izq.', key: '← / A', main: true }, { a: 'right', label: 'Brazada der.', key: '→ / D', main: true }];
-  g.help = { kb: [['← / A', 'Brazada izquierda'], ['→ / D', 'Brazada derecha']], touch: [['Izq. / Der.', 'Tocá alternando los dos botones']], goal: `Nadá ${o.goal} m en menos de ${o.limit} s. Alterná los brazos: si repetís el mismo, perdés ritmo.` };
+  o = Object.assign({ goal: 80, limit: 30, waves: [17, 36, 54, 70] }, o);
+  const g = { id: 'swim', post: true, status: 'play', t: 0, d: 0, v: 0, k: 0, combo: 0, side: 1, armL: 0, armR: 0, why: '', splash: [], q: '', qT: 0, G: null };
+  const P0 = .56, P1 = .74, G0 = .36, G1 = .92, RATE = 1 / .8;
+  const waves = o.waves.filter(w => w < o.goal - 4).map(w => ({ d: w, used: false }));
+  g.controls = [{ a: 'a', label: 'Brazada', key: 'Espacio / ← →', main: true }];
+  g.help = {
+    kb: [['Espacio / ← →', 'Brazada: soltala cuando la marca pasa por la zona verde']],
+    touch: [['Brazada', 'Tocá cuando la marca pasa por la zona verde']],
+    goal: `Nadá ${o.goal} m en menos de ${o.limit} s.`,
+    tip: 'No sirve apurarse: buscá el ritmo. Una brazada perfecta justo cuando pasa una ola te hace surfearla.'
+  };
+  const at = () => g.G ? [g.G.cx, g.G.py] : [0, 0];
   g.press = a => {
-    if (g.status !== 'play' || (a !== 'left' && a !== 'right')) return;
-    if (a === g.last) { g.v *= .55; g.msg = .9; } else g.v = Math.min(6.5, g.v + .85);
-    g.last = a; if (a === 'left') g.armL = 1; else g.armR = 1;
-    if (!reduce) g.splash.push({ x: a === 'left' ? -1 : 1, t: 0 });
+    if (g.status !== 'play' || !(a === 'a' || a === 'left' || a === 'right')) return;
+    const k = g.k; let imp, q;
+    // impulso proporcional al tiempo de la brazada: el ritmo importa, apurarse no suma
+    if (k >= P0 && k <= P1) { q = 'p'; g.combo++; imp = k * (2.2 + .05 * Math.min(10, g.combo)); }
+    else if (k >= G0 && k <= G1) { q = 'g'; imp = k * 1.6; }
+    else if (k > G1) { q = 'l'; imp = k * 1.3; g.combo = 0; }
+    else { q = 'e'; imp = k < .2 ? 0 : k * .5; g.combo = 0; if (k < .2) g.v *= .8; }
+    g.v = Math.min(7, g.v + imp); g.k = 0; g.q = q; g.qT = .5;
+    g.side = -g.side; if (g.side < 0) g.armL = 1; else g.armR = 1;
+    if (!reduce) g.splash.push({ x: g.side, t: 0 });
+    const [x, y] = at();
+    if (q === 'p') {
+      fx.burst(x + g.side * 14, y - 30, 10, { c: ['rgba(255,255,255,.8)', '#9fd3f0'], sp: 150, L: .5, g: 300, r: 2.6 });
+      if (g.combo >= 3 && g.combo % 3 === 0) fx.pop(`RITMO x${g.combo}`, { s: .6, y: .32 });
+      const w = waves.find(w => !w.used && Math.abs(w.d - g.d) < 1.6);
+      if (w) { w.used = true; g.v = Math.min(8.5, g.v + 2); fx.pop('¡SURFEASTE LA OLA!', { s: .62, y: .4 }); fx.flash(.18); fx.shake(3); fx.burst(x, y - 20, 22, { c: ['#fff', '#9fd3f0', C.hi], sp: 260, L: .8 }); }
+    } else if (q === 'e') fx.pop('¡APURADO!', { c: '#ffb27a', s: .45, y: .3, L: .6 });
   };
-  g.tap = (x, y, W) => g.press(x < W / 2 ? 'left' : 'right');
+  g.tap = () => g.press('a');
   g.update = dt => {
-    g.t += dt; g.v -= g.v * .7 * dt; g.d += g.v * dt;
-    g.armL = Math.max(0, g.armL - dt * 2.6); g.armR = Math.max(0, g.armR - dt * 2.6); if (g.msg > 0) g.msg -= dt;
+    const play = g.status === 'play';
+    if (play) g.t += dt;
+    g.v -= g.v * (play ? .6 : 1.8) * dt; g.d += g.v * dt;
+    g.k = Math.min(1.05, g.k + dt * RATE); if (g.qT > 0) g.qT -= dt;
+    g.armL = Math.max(0, g.armL - dt * 2.6); g.armR = Math.max(0, g.armR - dt * 2.6);
     g.splash.forEach(s => s.t += dt); g.splash = g.splash.filter(s => s.t < .6);
-    if (g.d >= o.goal) { g.d = o.goal; g.status = 'win'; }
-    else if (g.t >= o.limit) { g.status = 'lose'; g.why = 'Se terminó el tiempo antes de la boya final.'; }
+    if (!play) return;
+    if (g.d >= o.goal) {
+      g.status = 'win'; fx.slow(.8, .3); fx.flash(.3); const [x, y] = at();
+      fx.burst(x, y - 40, 40, { sp: 360, sq: true, L: 1.1 }); fx.pop('¡LLEGASTE!', { sub: `${g.t.toFixed(1)} s`, s: 1.05 });
+    } else if (g.t >= o.limit) { g.status = 'lose'; g.why = 'Se terminó el tiempo antes de la llegada.'; }
   };
-  g.hud = () => ({ l: `${Math.floor(g.d)} / ${o.goal} m`, r: fmt(o.limit - g.t), p: g.d / o.goal, warn: o.limit - g.t < 4 });
-  g.state = () => ({ d: g.d, v: g.v, last: g.last });
+  g.hud = () => ({ l: `${Math.min(o.goal, Math.floor(g.d))} / ${o.goal} m`, r: fmt(o.limit - g.t), p: g.d / o.goal, warn: o.limit - g.t < 4 });
+  g.state = () => ({ d: g.d, v: g.v, k: g.k, P0, P1, combo: g.combo });
   g.draw = (c, W, H, T) => {
-    const py = H * .7, ppm = H * .7 / 13, sy = d => py - (d - g.d) * ppm, cx = W / 2;
+    const py = H * .62, ppm = H * .62 / 12, sy = d => py - (d - g.d) * ppm, cx = W / 2;
+    g.G = { cx, py };
     const bg = c.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#0a2229'); bg.addColorStop(1, '#0d3340'); c.fillStyle = bg; c.fillRect(0, 0, W, H);
     c.strokeStyle = 'rgba(255,255,255,.07)'; c.lineWidth = 2;
     const gap = 1.6 * ppm, o0 = (g.d * ppm) % gap, k0 = Math.floor(g.d / 1.6);
@@ -557,8 +774,19 @@ function makeSwim(o = {}) {
       for (let x = 0; x <= W + 16; x += 16) { const yy = y + Math.sin(x * .025 + ph) * 4; x ? c.lineTo(x, yy) : c.moveTo(x, yy); }
       c.stroke();
     }
+    // olas grandes (para surfear)
+    for (const w of waves) {
+      const y = sy(w.d); if (y < -60 || y > H + 60) continue;
+      const near = Math.abs(w.d - g.d) < 1.6 && !w.used;
+      const gr = c.createLinearGradient(0, y - ppm * .9, 0, y + ppm * .3); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, `rgba(190,235,255,${w.used ? .08 : .22})`);
+      c.fillStyle = gr; c.fillRect(0, y - ppm * .9, W, ppm * 1.2);
+      c.strokeStyle = near ? C.hi : `rgba(255,255,255,${w.used ? .25 : .7})`; c.lineWidth = 3; c.beginPath();
+      for (let x = 0; x <= W + 12; x += 12) { const yy = y + Math.sin(x * .04 + (reduce ? 0 : T * 2)) * 5; x ? c.lineTo(x, yy) : c.moveTo(x, yy); }
+      c.stroke();
+      if (!w.used && y > 40) text(c, near ? '¡AHORA!' : 'OLA', W - 16, y - 14, 11, near ? C.hi : 'rgba(255,255,255,.7)', 'right', FM, 700);
+    }
     const bxo = Math.min(W * .34, 170), br = Math.max(10, ppm * .32);
-    for (let m = 25; m < o.goal; m += 25) {
+    for (let m = 20; m < o.goal; m += 20) {
       const y = sy(m); if (y < -40 || y > H + 40) continue;
       for (const sd of [-1, 1]) { const x = cx + sd * bxo; c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(x + 3, y + 4, br, br * .6, 0, 0, TAU); c.fill(); c.fillStyle = '#f07a24'; c.beginPath(); c.arc(x, y, br, 0, TAU); c.fill(); c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.arc(x - br * .3, y - br * .3, br * .3, 0, TAU); c.fill(); }
       text(c, m + ' m', cx + bxo - br - 8, y, 12, 'rgba(255,255,255,.65)', 'right', FM, 700);
@@ -585,38 +813,59 @@ function makeSwim(o = {}) {
     c.fillStyle = '#fff'; c.fillRect(-s * .1, -s * .47, s * .2, s * .035);
     c.restore();
     for (const sp of g.splash) { const a = 1 - sp.t / .6; c.strokeStyle = `rgba(255,255,255,${a * .5})`; c.lineWidth = 2; c.beginPath(); c.arc(cx + sp.x * s * .3, py - s * .8, s * .1 + sp.t * s * .5, 0, TAU); c.stroke(); }
-    if (g.msg > 0) { c.globalAlpha = Math.min(1, g.msg * 2); rr(c, cx - 100, py - s * 1.6 - 18, 200, 36, 18); c.fillStyle = 'rgba(11,12,11,.82)'; c.fill(); text(c, '¡ALTERNÁ LOS BRAZOS!', cx, py - s * 1.6, 15, C.hi); c.globalAlpha = 1; }
+    // medidor de ritmo
+    const mw = Math.min(W * .78, 340), mx = cx - mw / 2, my = H - 46, mh = 14;
+    rr(c, mx - 10, my - 26, mw + 20, mh + 40, 14); c.fillStyle = 'rgba(11,12,11,.72)'; c.fill();
+    rr(c, mx, my, mw, mh, 7); c.fillStyle = 'rgba(255,255,255,.1)'; c.fill();
+    c.fillStyle = 'rgba(46,229,102,.28)'; c.fillRect(mx + mw * G0, my, mw * (G1 - G0), mh);
+    c.fillStyle = C.green; c.fillRect(mx + mw * P0, my, mw * (P1 - P0), mh);
+    const kx = mx + mw * Math.min(1, g.k), inP = g.k >= P0 && g.k <= P1;
+    c.fillStyle = inP ? '#fff' : C.paper; rr(c, kx - 3, my - 5, 6, mh + 10, 3); c.fill();
+    const lbl = g.qT > 0 ? ({ p: 'PERFECTO', g: 'BIEN', l: 'TARDE', e: 'APURADO' })[g.q] : 'RITMO';
+    text(c, lbl, mx, my - 13, 11, g.qT > 0 && g.q === 'p' ? C.hi : g.qT > 0 && g.q === 'e' ? '#ffb27a' : 'rgba(255,255,255,.75)', 'left', FM, 700);
+    if (g.combo > 1) text(c, `x${g.combo}`, mx + mw, my - 13, 12, C.hi, 'right', FM, 700);
   };
   return g;
 }
 
-/* ---------- TRIATLÓN: natación + bici + running, versiones cortas ---------- */
+/* ---------- TRIATLÓN: las tres disciplinas encadenadas, versiones cortas ---------- */
 function makeTri() {
   const st = [
-    { n: 'Natación', f: () => makeSwim({ goal: 40, limit: 14 }) },
-    { n: 'Ciclismo', f: () => makeBike({ goal: 160, lives: 3, v0: 13, v1: 17 }) },
-    { n: 'Running', f: () => makeRun({ goal: 50, limit: 11, hurdles: [18, 34] }) }
+    { n: 'Natación', f: () => makeSwim({ goal: 32, limit: 15, waves: [16] }) },
+    { n: 'Ciclismo', f: () => makeBike({ goal: 160, lives: 3, v0: 13, v1: 18 }) },
+    { n: 'Running', f: () => makeRun({ goal: 50, limit: 12, hurdles: [12, 23, 34, 44], rival: 9.8 }) }
   ];
-  const g = { id: 'tri', status: 'play', i: 0, ch: st[0].f(), tr: 0, why: '' };
-  Object.defineProperty(g, 'controls', { get: () => g.tr > 0 ? [{ hint: 'Transición…' }] : g.ch.controls });
-  g.help = { kb: [['Natación', '← → alternando'], ['Ciclismo', '← → para cambiar de carril'], ['Running', 'Espacio para correr · ↑ para saltar']], touch: [['Natación', 'Izq. / Der. alternando'], ['Ciclismo', '◀ ▶ para cambiar de carril'], ['Running', 'Correr rápido · Saltar las vallas']], goal: 'Tres etapas cortas, una atrás de la otra. Completá las tres.' };
+  const g = { id: 'tri', post: true, status: 'play', i: 0, ch: st[0].f(), tr: 0, why: '', total: 0 };
+  Object.defineProperty(g, 'controls', { get: () => g.tr > 0 ? [{ hint: 'Transición… preparate' }] : g.ch.controls });
+  g.help = {
+    kb: [['Natación', 'Espacio en la zona verde del ritmo'], ['Ciclismo', '← → para cambiar de carril'], ['Running', 'Espacio para correr · ↑ en la franja verde']],
+    touch: [['Natación', 'Brazada en la zona verde'], ['Ciclismo', '◀ ▶ para cambiar de carril'], ['Running', 'Correr seguido · Saltar en la franja verde']],
+    goal: 'Tres etapas cortas, una atrás de la otra. Completá las tres.',
+    tip: 'Es la versión corta de cada disciplina. Entre etapas tenés un respiro para cambiar de controles.'
+  };
   g.press = a => { if (g.tr <= 0) g.ch.press(a); };
   g.release = a => { if (g.ch.release) g.ch.release(a); };
   g.tap = (x, y, W, H) => { if (g.tr <= 0 && g.ch.tap) g.ch.tap(x, y, W, H); };
   g.update = dt => {
-    if (g.tr > 0) { g.tr -= dt; if (g.tr <= 0) { g.i++; g.ch = st[g.i].f(); } return; }
-    g.ch.update(dt);
+    if (g.status !== 'play') { g.ch.update(dt); return; }
+    if (g.tr > 0) { g.ch.update(dt); g.tr -= dt; if (g.tr <= 0) { g.i++; g.ch = st[g.i].f(); fx.reset(); } return; }
+    g.total += dt; g.ch.update(dt);
     if (g.ch.status === 'lose') { g.status = 'lose'; g.why = `${st[g.i].n}: ${g.ch.why}`; }
-    else if (g.ch.status === 'win') { if (g.i === st.length - 1) g.status = 'win'; else g.tr = 1.3; }
+    else if (g.ch.status === 'win') {
+      FX.pops = [];
+      if (g.i === st.length - 1) { g.status = 'win'; fx.pop('¡TRIATLÓN COMPLETO!', { sub: `${g.total.toFixed(1)} s en total`, s: .75 }); }
+      else { g.tr = 1.5; fx.pop(`¡${st[g.i].n.toUpperCase()} LISTO!`, { s: .75, y: .3 }); }
+    }
   };
   g.hud = () => { const h = g.ch.hud(); return Object.assign({}, h, { stage: `${g.i + 1}/3 ${st[g.i].n}`, p: (g.i + (g.tr > 0 ? 1 : h.p)) / 3 }); };
   g.state = () => Object.assign({ stage: g.i, tr: g.tr > 0, cid: g.ch.id }, g.ch.state());
   g.draw = (c, W, H, T) => {
     g.ch.draw(c, W, H, T);
-    if (g.tr > 0) {
-      c.fillStyle = 'rgba(11,12,11,.8)'; c.fillRect(0, 0, W, H);
+    if (g.tr > 0 && g.tr < 1.1) {
+      c.fillStyle = `rgba(11,12,11,${.8 * clamp((1.1 - g.tr) / .3, 0, 1)})`; c.fillRect(0, 0, W, H);
       text(c, `ETAPA ${g.i + 2} DE 3`, W / 2, H / 2 - 34, 13, C.hi, 'center', FM, 700);
       text(c, st[g.i + 1].n.toUpperCase(), W / 2, H / 2 + 8, Math.min(W * .12, 56), '#fff');
+      text(c, `Tiempo total ${g.total.toFixed(1)} s`, W / 2, H / 2 + 52, 12, 'rgba(255,255,255,.7)', 'center', FM, 700);
     }
   };
   return g;
@@ -634,11 +883,11 @@ const ICONS = {
   tri: '<circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4M12 2v3M18.5 6.5 20 5"/>'
 };
 const GAMES = [
-  { id: 'run', name: 'Running', d: 'Corré los 100 m y saltá las vallas.', make: makeRun },
-  { id: 'bike', name: 'Ciclismo', d: 'Esquivá pozos y conos en la ruta.', make: makeBike },
-  { id: 'foot', name: 'Fútbol', d: 'Penales contra un arquero que se mueve.', make: makeFoot },
+  { id: 'run', name: 'Running', d: 'Saltá justo, sumá turbo y ganale al rival.', make: makeRun },
+  { id: 'bike', name: 'Ciclismo', d: 'Curvas, obras, charcos, turbo y monedas.', make: makeBike },
+  { id: 'foot', name: 'Fútbol', d: 'Mira, altura y a buscar el ángulo.', make: makeFoot },
   { id: 'golf', name: 'Footgolf', d: 'Dirección y fuerza para embocarla.', make: makeGolf },
-  { id: 'swim', name: 'Aguas abiertas', d: 'Brazadas alternadas hasta la boya.', make: makeSwim },
+  { id: 'swim', name: 'Aguas abiertas', d: 'Brazadas con ritmo y olas para surfear.', make: makeSwim },
   { id: 'tri', name: 'Triatlón', d: 'Nadá, pedaleá y corré: tres etapas.', make: makeTri }
 ];
 const KEYMAP = { ' ': 'a', Spacebar: 'a', Enter: 'a', ArrowUp: 'up', w: 'up', W: 'up', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right', ArrowDown: 'down', s: 'down', S: 'down' };
@@ -669,7 +918,7 @@ root.innerHTML = `
     </section>
     <section class="cj-scr cj-play" aria-label="Juego">
       <div class="cj-stage"><canvas aria-label="Mini juego"></canvas>
-        <div class="cj-card2 cj-intro"><div><p class="k">Cómo se juega</p><h3></h3><p class="goal"></p><ul></ul><button class="cj-btn wide" type="button" data-act="start">Empezar <span class="cj-only-kb" style="opacity:.75;font-weight:500">(Espacio)</span></button></div></div>
+        <div class="cj-card2 cj-intro"><div><p class="k">Cómo se juega</p><h3></h3><p class="goal"></p><ul></ul><p class="tip"></p><button class="cj-btn wide" type="button" data-act="start">Empezar <span class="cj-only-kb" style="opacity:.75;font-weight:500">(Espacio)</span></button></div></div>
         <div class="cj-card2 cj-pause" hidden><div><p class="k">Pausa</p><h3>Juego en pausa</h3><p>Seguí cuando quieras.</p><br><button class="cj-btn wide" type="button" data-act="resume">Seguir jugando</button></div></div>
       </div>
       <div class="cj-ctrl"></div>
@@ -754,12 +1003,14 @@ cv.addEventListener('pointermove', e => { if (phase === 'play' && game.move) { c
 function pick(id) {
   gdef = GAMES.find(g => g.id === id); if (!gdef) return;
   ls.set(LS_VISTO, '1');
-  game = gdef.make(); ctrlKey = ''; conf = [];
+  fx.reset(); game = gdef.make(); ctrlKey = ''; conf = [];
   show('play'); phase = 'intro';
   intro.hidden = false; pauseC.hidden = true;
   const h = game.help;
   intro.querySelector('h3').textContent = gdef.name;
   intro.querySelector('.goal').textContent = h.goal;
+  intro.querySelector('.tip').textContent = h.tip || '';
+  intro.querySelector('.tip').hidden = !h.tip;
   intro.querySelector('ul').innerHTML = h.kb.map(([k, t]) => `<li class="cj-only-kb"><kbd>${esc(k)}</kbd>${esc(t)}</li>`).join('') + h.touch.map(([k, t]) => `<li class="cj-only-touch"><kbd>${esc(k)}</kbd>${esc(t)}</li>`).join('');
   renderCtrl(); resize(); start();
   setTimeout(() => intro.querySelector('button').focus({ preventScroll: true }), 30);
@@ -775,11 +1026,13 @@ function loop(ts) {
   raf = requestAnimationFrame(loop);
   const dt = Math.min(.05, Math.max(0, (ts - last) / 1000)); last = ts; T += dt;
   if (!game) return stop();
+  const gdt = dt * (FX.slow > 0 ? FX.slowK : 1);
+  fxStep(dt);
   if (phase === 'count') { count -= dt; if (count <= 0) phase = 'play'; }
   else if (phase === 'play') {
-    game.update(dt); renderCtrl();
-    if (game.status !== 'play') { phase = 'end'; endT = game.status === 'win' ? 1.1 : .9; if (game.status === 'win' && !reduce) burst(); }
-  } else if (phase === 'end') { endT -= dt; if (endT <= 0) { phase = 'done'; stop(); result(game.status === 'win'); return; } }
+    game.update(gdt); renderCtrl();
+    if (game.status !== 'play') { phase = 'end'; endT = game.status === 'win' ? 1.7 : 1.1; if (game.status === 'win' && !reduce) burst(); }
+  } else if (phase === 'end') { if (game.post) game.update(gdt); endT -= dt; if (endT <= 0) { phase = 'done'; stop(); result(game.status === 'win'); return; } }
   conf.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 600 * dt; p.r += p.vr * dt; p.l -= dt; }); conf = conf.filter(p => p.l > 0);
   draw();
 }
@@ -787,7 +1040,11 @@ function burst() { for (let i = 0; i < 70; i++) conf.push({ x: W / 2, y: H * .45
 function draw() {
   if (!game || W < 40 || H < 40) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (FX.shake > 0) { const a = FX.shake; ctx.translate((Math.random() - .5) * a, (Math.random() - .5) * a); }
   game.draw(ctx, W, H, T);
+  ctx.restore();
+  fxDraw(ctx, W, H);
   const h = game.hud(), pad = 12;
   ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(0, 0, W, 4);
   ctx.fillStyle = C.hi; ctx.fillRect(0, 0, W * clamp(h.p, 0, 1), 4);
