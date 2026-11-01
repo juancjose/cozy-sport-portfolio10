@@ -1,4 +1,14 @@
-# Cozy Sport · Sitio web
+<!-- jnce-header -->
+# Cozy Sport · Portfolio
+
+> Cozy Sport · Portfolio — v10 (sitio estático)
+
+**🛠️ Tecnologías:** HTML · CSS · JavaScript  
+**👤 Diseño y desarrollo:** [Juan José Cáceres](https://juancjose.github.io/jnce-studio/)
+
+![Vista previa de Cozy Sport · Portfolio](docs/preview.jpg)
+
+---
 
 Sitio que diseñé y desarrollé para **Cozy Sport**, la marca de indumentaria deportiva personalizada de Beccar, Buenos Aires, que fabrica para equipos, clubes y deportistas desde 1983.
 
